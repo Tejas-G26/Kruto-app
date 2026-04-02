@@ -256,7 +256,7 @@ const BusinessForm = () => {
 
         {images.length < 4 && (
           <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
-            <Icons name="camera" size={32} color="#3897f0" />
+            <Icons name="camera" size={25} color="#3897f0" />
             <Text adjustsFontSizeToFit style={styles.addImageText}>Add Photo</Text>
             <Text adjustsFontSizeToFit style={styles.imageCount}>{images.length}/4</Text>
           </TouchableOpacity>
@@ -797,7 +797,7 @@ const BusinessForm = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Icons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text adjustsFontSizeToFit style={styles.headerTitle}>List Equipment for Rent</Text>
+          <Text adjustsFontSizeToFit style={styles.headerTitle}>List Equipment</Text>
           <TouchableOpacity style={styles.helpBtn}>
             <Icons name="help-circle-outline" size={24} color="#878787" />
           </TouchableOpacity>
@@ -1015,7 +1015,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   warningText: {
-    color: "#ff6b6b",
+    color: "#888888",
     fontSize: 12,
     marginTop: 8,
     marginBottom: 16,
@@ -1046,12 +1046,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addImageBtn: {
-    width: (width - 52) / 2,
-    height: (width - 52) / 2,
+    width: (width - -280) / 2,
+    height: (width - 180) / 2,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#3897f0",
-    borderStyle: "dashed",
+    borderColor: "#505050",
+    //borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#1C1C1E",

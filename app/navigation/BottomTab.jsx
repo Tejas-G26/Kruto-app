@@ -33,7 +33,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           size={22}
           color="#fff"
         />
-        <Text adjustsFontSizeToFit  style={styles.label}>
+        <Text adjustsFontSizeToFit numberOfLines={1}  style={styles.label}>
           Home
         </Text>
       </TouchableOpacity>
@@ -48,7 +48,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           size={22}
           color="#fff"
         />
-        <Text adjustsFontSizeToFit style={styles.label}>
+        <Text adjustsFontSizeToFit numberOfLines={1} style={styles.label}>
           Community
         </Text>
       </TouchableOpacity>
@@ -71,7 +71,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           size={22}
           color="#fff"
         />
-        <Text adjustsFontSizeToFit style={styles.label}>
+        <Text adjustsFontSizeToFit numberOfLines={1} style={styles.label}>
           Business
         </Text>
       </TouchableOpacity>
@@ -86,7 +86,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           size={22}
           color="#fff"
         />
-        <Text adjustsFontSizeToFit style={styles.label}>
+        <Text adjustsFontSizeToFit numberOfLines={1} style={styles.label}>
           Profile
         </Text>
       </TouchableOpacity>
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 9,
+    fontSize: 7,
     color: "#fff",
     marginTop: 2,
   },

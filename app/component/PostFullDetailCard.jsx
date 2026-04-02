@@ -62,7 +62,7 @@ const PostFullDetailCard = ({
   };
 
    const sharePost = async (post_id) => {
-      const link = `kruto://post/${post_id}`; // ✅ correct
+      const link = `https://kruto-app.netlify.app/post/${post_id}`;
     
       await Share.share({
         message:'Kruto post : '+ link,

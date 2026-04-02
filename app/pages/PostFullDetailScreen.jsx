@@ -223,7 +223,7 @@ const PostFullDetailScreen = ({ route }) => {
   };
 
   const sharePost = async () => {
-    const link = `kruto://post/${post_id}`;
+    const link = `https://kruto-app.netlify.app/post/${post_id}`;
     await Share.share({
       message: 'Kruto post : ' + link,
     });

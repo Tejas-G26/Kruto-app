@@ -506,7 +506,17 @@ const renderItem = ({ item, index }) => {
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
             onLayout={() => flatListRef.current?.scrollToEnd()}
+
+            ListEmptyComponent={
+  <View style={styles.emptyStateContainer}>
+    <View style={styles.emptyStateIconContainer}>
+      <Icons name="chatbubbles-outline" size={60} color="#8E8E93" />
+    </View>
+    <Text adjustsFontSizeToFit style={styles.emptyStateTitle}>No conversations yet</Text>  
+  </View>
+}
           />
+          
 
           {/* INPUT */}
           <View style={styles.inputContainer}>
@@ -791,4 +801,66 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#1C1C1E",
   },
+  emptyStateContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 32,
+  paddingVertical: 60,
+  minHeight: 400,
+},
+emptyStateIconContainer: {
+  backgroundColor: '#1C1C1E',
+  width: 120,
+  height: 120,
+  borderRadius: 60,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 24,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 4,
+  },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 5,
+},
+emptyStateTitle: {
+  color: '#fff',
+  fontSize: 20,
+  fontWeight: '700',
+  marginBottom: 8,
+  textAlign: 'center',
+},
+emptyStateSubtitle: {
+  color: '#8E8E93',
+  fontSize: 12,
+  textAlign: 'center',
+  lineHeight: 22,
+  marginBottom: 32,
+  paddingHorizontal: 20,
+},
+findFriendsButton: {
+  flexDirection: 'row',
+  backgroundColor: '#3897f0',
+  paddingHorizontal: 24,
+  paddingVertical: 12,
+  borderRadius: 25,
+  alignItems: 'center',
+  gap: 8,
+  shadowColor: '#3897f0',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 3,
+},
+findFriendsButtonText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: '600',
+},
 });

@@ -2,7 +2,8 @@ import { useLocalSearchParams } from "expo-router";
 import BussinessFullDetailScreen  from "../../app/pages/BussinessFullDetailScreen"
 
 export default function BusinessPage() {
-  const { business_id } = useLocalSearchParams();
+  const { businessId } = useLocalSearchParams();
+  console.log(businessId);
 
-  return <BussinessFullDetailScreen business_id={business_id} />;
+  return <BussinessFullDetailScreen businessId={businessId} />;
 }

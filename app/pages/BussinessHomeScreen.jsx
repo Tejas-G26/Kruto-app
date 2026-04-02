@@ -32,7 +32,7 @@ const BussinessHomeScreen = ({ navigation }) => {
   };
 
   const sharePost = async (business_id) => {
-      const link = `kruto://business/${business_id}`; // ✅ correct
+      const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
     
       await Share.share({
         message:'Kruto Business : '+ link,

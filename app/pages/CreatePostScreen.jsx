@@ -32,9 +32,9 @@ const CreatePostScreen = ({ navigation }) => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:["images"],
+      mediaTypes:['images'],
       quality: 0.7,
-      allowsEditing: flase, // 🔥 crop enabled
+      allowsEditing: true, // 🔥 crop enabled
       aspect: [1, 1],
     });
 

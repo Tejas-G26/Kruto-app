@@ -9,14 +9,14 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
-  Share
+  Share,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
 import { supabase } from "@/lib/supabase";
 import PostFullDetailCard from "../component/PostFullDetailCard";
-
+import { RefreshControl } from "react-native";
 
 const { width } = Dimensions.get("window");
 const isSmallDevice = width < 375;
@@ -28,6 +28,7 @@ const ProfileScreen = ({ navigation }) => {
   const [following, setFollowing] = useState(0);
   const [showMore, setShowMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { profile_id } = route.params;
 
@@ -38,6 +39,12 @@ const ProfileScreen = ({ navigation }) => {
     } = await supabase.auth.getUser();
     return user;
   };
+
+  const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchProfile();
+  setRefreshing(false);
+};
 
   // 🔥 FETCH DATA
   const fetchProfile = async () => {
@@ -53,14 +60,30 @@ const ProfileScreen = ({ navigation }) => {
 
     setUser(userData);
 
-    // posts
-    const { data: postData } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false });
+    // posts with likes & comments count
+    // ✅ FIXED POSTS FETCH
+const { data: postData } = await supabase
+  .from("posts")
+  .select(`
+    *,
+    post_likes!left(user_id),
+    comments(count)
+  `)
+  .eq("user_id", currentUser.id)
+  .order("created_at", { ascending: false });
 
-    setPosts(postData || []);
+const formattedPosts = postData.map(post => {
+  const likes = post.post_likes || [];
+
+  return {
+    ...post,
+    likes_count: likes.length,
+    comments_count: post.comments?.[0]?.count || 0,
+    user_has_liked: likes.some(like => like.user_id === currentUser.id)
+  };
+});
+
+setPosts(formattedPosts);
 
     // followers
     const { count: followersCount } = await supabase
@@ -80,41 +103,51 @@ const ProfileScreen = ({ navigation }) => {
     setLoading(false);
   };
 
-
   const sharePost = async () => {
-      const currentUser = await getCurrentUser();
-      const link = `kruto://profile/${currentUser.id}`; // ✅ correct
-    
-      await Share.share({
-        message:'Kruto profile : '+ link,
-      });
-    };
+    const currentUser = await getCurrentUser();
+    const link = `https://kruto-app.netlify.app/profile/${currentUser.id}`; // ✅ correct
 
-const formatDOB = (isoDate) => {
-  const date = new Date(isoDate);
+    await Share.share({
+      message: "Kruto profile : " + link,
+    });
+  };
 
-  const day = date.getDate();
-  const year = date.getFullYear();
+  const formatDOB = (isoDate) => {
+    const date = new Date(isoDate);
 
-  const monthNames = [
-    "January", "February", "March", "April",
-    "May", "June", "July", "August",
-    "September", "October", "November", "December"
-  ];
+    const day = date.getDate();
+    const year = date.getFullYear();
 
-  const month = monthNames[date.getMonth()];
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
 
-  return `${day}-${month} ${year}`;
-};
+    const month = monthNames[date.getMonth()];
+
+    return `${day}-${month} ${year}`;
+  };
 
   // Add this function in your OtherUserProfileScreen component (before the return statement)
-const handlePostDelete = (deletedPostId) => {
-  // Remove the deleted post from the posts state
-  setPosts(prevPosts => prevPosts.filter(post => post.post_id !== deletedPostId));
-  
-  // Optional: Show a success message
-  Alert.alert('Success', 'Post deleted successfully');
-};
+  const handlePostDelete = (deletedPostId) => {
+    // Remove the deleted post from the posts state
+    setPosts((prevPosts) =>
+      prevPosts.filter((post) => post.post_id !== deletedPostId),
+    );
+
+    // Optional: Show a success message
+    Alert.alert("Success", "Post deleted successfully");
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -124,7 +157,7 @@ const handlePostDelete = (deletedPostId) => {
   const getJoinedDate = () => {
     if (!user?.created_at) return "Recently";
     const date = new Date(user.created_at);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
   if (loading) {
@@ -143,33 +176,41 @@ const handlePostDelete = (deletedPostId) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.profileRow}>
-          <Text adjustsFontSizeToFit style={styles.Nav_text}>Profile</Text>
+          <Text adjustsFontSizeToFit style={styles.Nav_text}>
+            Profile
+          </Text>
 
           <View style={styles.headerIcons}>
-            <TouchableOpacity
-            onPress={sharePost}
-            style={styles.iconCircle}>
+            <TouchableOpacity onPress={sharePost} style={styles.iconCircle}>
               <Icons name="share-social-outline" size={20} color="#fff" />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => navigation.navigate("S")}
-              style={styles.iconCircle}>
+              style={styles.iconCircle}
+            >
               <Icons name="settings" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-
-        
+     <ScrollView
+  showsVerticalScrollIndicator={false}
+  contentContainerStyle={styles.scrollContent}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={["#3897f0"]}
+      tintColor="#3897f0"
+    />
+  }
+>
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
@@ -177,7 +218,7 @@ const handlePostDelete = (deletedPostId) => {
               style={styles.avatar}
               source={{ uri: user.profile_image_url }}
               resizeMode="cover"
-              defaultSource={require('../../assets/images/default-avatar.png')}
+              defaultSource={require("../../assets/images/default-avatar.png")}
             />
             <View style={styles.verifiedBadge}>
               <Icons name="checkmark-circle" size={20} color="#3897f0" />
@@ -185,20 +226,29 @@ const handlePostDelete = (deletedPostId) => {
           </View>
 
           <View style={styles.nameContainer}>
-            <Text adjustsFontSizeToFit style={styles.name}>{user.full_name}</Text>
-            <Text adjustsFontSizeToFit style={styles.username}>@{user.username}</Text>
+            <Text adjustsFontSizeToFit style={styles.name}>
+              {user.full_name}
+            </Text>
+            <Text adjustsFontSizeToFit style={styles.username}>
+              @{user.username}
+            </Text>
           </View>
 
           {/* Bio with Show More */}
           {user.bio && (
             <View style={styles.bioContainer}>
               <Text adjustsFontSizeToFit style={styles.bio}>
-                {showMore ? user.bio : user.bio.length > 100 ? `${user.bio.substring(0, 100)}...` : user.bio}
+                {showMore
+                  ? user.bio
+                  : user.bio.length > 100
+                    ? `${user.bio.substring(0, 100)}...`
+                    : user.bio}
               </Text>
               {user.bio.length > 100 && (
                 <TouchableOpacity
                   style={styles.moreLink}
-                  onPress={() => setShowMore(!showMore)}>
+                  onPress={() => setShowMore(!showMore)}
+                >
                   <Text adjustsFontSizeToFit style={styles.moreText}>
                     {showMore ? "Show less" : "Show more"}
                   </Text>
@@ -212,27 +262,32 @@ const handlePostDelete = (deletedPostId) => {
             {user.location && (
               <View style={styles.infoChip}>
                 <Icons name="location-outline" size={14} color="#8E8E93" />
-                <Text adjustsFontSizeToFit style={styles.infoChipText}>{user.location}</Text>
+                <Text adjustsFontSizeToFit style={styles.infoChipText}>
+                  {user.location}
+                </Text>
               </View>
             )}
-            
+
             <View style={styles.infoChip}>
               <Icons name="calendar-outline" size={14} color="#8E8E93" />
-              <Text adjustsFontSizeToFit style={styles.infoChipText}>Joined {getJoinedDate()}</Text>
+              <Text adjustsFontSizeToFit style={styles.infoChipText}>
+                Joined {getJoinedDate()}
+              </Text>
             </View>
           </View>
 
           {/* More Details Button */}
           <TouchableOpacity
             style={styles.moreDetailsBtn}
-            onPress={() => setShowMore(!showMore)}>
+            onPress={() => setShowMore(!showMore)}
+          >
             <Text adjustsFontSizeToFit style={styles.moreDetailsText}>
               {showMore ? "Hide Details" : "View Full Details"}
             </Text>
-            <Icons 
-              name={showMore ? "chevron-up" : "chevron-down"} 
-              size={16} 
-              color="#3897f0" 
+            <Icons
+              name={showMore ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#3897f0"
             />
           </TouchableOpacity>
 
@@ -241,89 +296,123 @@ const handlePostDelete = (deletedPostId) => {
             <View style={styles.moreInfoContainer}>
               <View style={styles.moreInfoHeader}>
                 <Icons name="person-circle-outline" size={20} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.moreInfoTitle}>Personal Information</Text>
+                <Text adjustsFontSizeToFit style={styles.moreInfoTitle}>
+                  Personal Information
+                </Text>
               </View>
-              
+
               {user.email && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="mail-outline" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Email</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.email}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Email
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.email}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.phone_number && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="call-outline" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Phone</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.phone_number}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Phone
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.phone_number}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.date_of_birth && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="calendar" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Birthday</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{formatDOB(user.date_of_birth)}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Birthday
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {formatDOB(user.date_of_birth)}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.gender && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
-                    <Icons name="male-female-outline" size={16} color="#3897f0" />
+                    <Icons
+                      name="male-female-outline"
+                      size={16}
+                      color="#3897f0"
+                    />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Gender</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.gender}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Gender
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.gender}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.occupation && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="briefcase-outline" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Occupation</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.occupation}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Occupation
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.occupation}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.relationship_status && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="heart-outline" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Relationship</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.relationship_status}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Relationship
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.relationship_status}
+                    </Text>
                   </View>
                 </View>
               )}
-              
+
               {user.website_link && (
                 <View style={styles.moreInfoItem}>
                   <View style={styles.moreInfoIcon}>
                     <Icons name="globe-outline" size={16} color="#3897f0" />
                   </View>
                   <View style={styles.moreInfoContent}>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>Website</Text>
-                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>{user.website_link}</Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoLabel}>
+                      Website
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.moreInfoText}>
+                      {user.website_link}
+                    </Text>
                   </View>
                 </View>
               )}
@@ -334,27 +423,47 @@ const handlePostDelete = (deletedPostId) => {
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text adjustsFontSizeToFit style={styles.statNumber}>{posts.length}</Text>
-            <Text adjustsFontSizeToFit style={styles.statLabel}>Posts</Text>
-           <View style={styles.statIcon}>
-                         <Icons name="images-outline" size={16} color="#3897f0" />
-                       </View>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text adjustsFontSizeToFit style={styles.statNumber}>{followers}</Text>
-            <Text adjustsFontSizeToFit numberOfLines={1} style={styles.statLabel}>Followers</Text>
+            <Text adjustsFontSizeToFit style={styles.statNumber}>
+              {posts.length}
+            </Text>
+            <Text adjustsFontSizeToFit style={styles.statLabel}>
+              Posts
+            </Text>
             <View style={styles.statIcon}>
-                         <Icons name="people-outline" size={16} color="#3897f0" />
-                       </View>
+              <Icons name="images-outline" size={16} color="#3897f0" />
+            </View>
           </View>
 
           <View style={styles.statCard}>
-            <Text adjustsFontSizeToFit style={styles.statNumber}>{following}</Text>
-            <Text adjustsFontSizeToFit numberOfLines={1} style={styles.statLabel}>Following</Text>
-             <View style={styles.statIcon}>
-                          <Icons name="person-add-outline" size={16} color="#3897f0" />
-                        </View>
+            <Text adjustsFontSizeToFit style={styles.statNumber}>
+              {followers}
+            </Text>
+            <Text
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              style={styles.statLabel}
+            >
+              Followers
+            </Text>
+            <View style={styles.statIcon}>
+              <Icons name="people-outline" size={16} color="#3897f0" />
+            </View>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text adjustsFontSizeToFit style={styles.statNumber}>
+              {following}
+            </Text>
+            <Text
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              style={styles.statLabel}
+            >
+              Following
+            </Text>
+            <View style={styles.statIcon}>
+              <Icons name="person-add-outline" size={16} color="#3897f0" />
+            </View>
           </View>
         </View>
 
@@ -362,59 +471,64 @@ const handlePostDelete = (deletedPostId) => {
         <View style={styles.postsHeader}>
           <View style={styles.postsHeaderLeft}>
             <Icons name="grid-outline" size={20} color="#3897f0" />
-            <Text adjustsFontSizeToFit style={styles.postsTitle}>My Posts</Text>
+            <Text adjustsFontSizeToFit style={styles.postsTitle}>
+              My Posts
+            </Text>
           </View>
           {posts.length > 0 && (
             <View style={styles.postsCountBadge}>
-              <Text adjustsFontSizeToFit style={styles.postsCount}>{posts.length}</Text>
+              <Text adjustsFontSizeToFit style={styles.postsCount}>
+                {posts.length}
+              </Text>
             </View>
           )}
         </View>
 
-       {/* Feed */}
-<View style={styles.feed}>
-  {posts.length === 0 ? (
-    <View style={styles.emptyPostsContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Icons name="images-outline" size={60} color="#2f2f2f" />
-      </View>
-      <Text adjustsFontSizeToFit style={styles.emptyPostsTitle}>No posts yet</Text>
-      <Text adjustsFontSizeToFit style={styles.emptyPostsSubtitle}>
-        {user.full_name} hasn't posted anything yet
-      </Text>
-    </View>
-  ) : (
-    posts.map((item) => (
-      <PostFullDetailCard
-        key={item.post_id}
-        post_id={item.post_id}
-        user_id={item.user_id}
-        image={{ uri: item.image_url }}
-        proimg={{ uri: user.profile_image_url }}
-        name={user.full_name}
-        username={user.username}
-        title={item.title}
-        des={item.description}
-        time={item.created_at}
-        initialLikesCount={item.likes_count || 0}
-        initialCommentsCount={item.comments_count || 0}
-        initialIsLiked={item.user_has_liked || false}
-        onLikeUpdate={(postId, isLiked, newCount) => {
-          // Update likes count in the posts state
-          setPosts(prevPosts =>
-            prevPosts.map(post =>
-              post.post_id === postId
-                ? { ...post, likes_count: newCount }
-                : post
-            )
-          );
-        }}
-        onPostDelete={handlePostDelete} // ← ADD THIS LINE
-      />
-    ))
-  )}
-</View>
-
+        {/* Feed */}
+        <View style={styles.feed}>
+          {posts.length === 0 ? (
+            <View style={styles.emptyPostsContainer}>
+              <View style={styles.emptyIconContainer}>
+                <Icons name="images-outline" size={60} color="#2f2f2f" />
+              </View>
+              <Text adjustsFontSizeToFit style={styles.emptyPostsTitle}>
+                No posts yet
+              </Text>
+              <Text adjustsFontSizeToFit style={styles.emptyPostsSubtitle}>
+                {user.full_name} hasn't posted anything yet
+              </Text>
+            </View>
+          ) : (
+            posts.map((item) => (
+              <PostFullDetailCard
+                key={item.post_id}
+                post_id={item.post_id}
+                user_id={item.user_id}
+                image={{ uri: item.image_url }}
+                proimg={{ uri: user.profile_image_url }}
+                name={user.full_name}
+                username={user.username}
+                title={item.title}
+                des={item.description}
+                time={item.created_at}
+                initialLikesCount={item.likes_count || 0}
+                initialCommentsCount={item.comments_count || 0}
+                initialIsLiked={item.user_has_liked || false}
+                onLikeUpdate={(postId, isLiked, newCount) => {
+                  // Update likes count in the posts state
+                  setPosts((prevPosts) =>
+                    prevPosts.map((post) =>
+                      post.post_id === postId
+                        ? { ...post, likes_count: newCount }
+                        : post,
+                    ),
+                  );
+                }}
+                onPostDelete={handlePostDelete} // ← ADD THIS LINE
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -492,7 +606,7 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     marginBottom: 16,
-    position: 'relative',
+    position: "relative",
   },
   avatar: {
     width: 100,
@@ -501,10 +615,10 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: "#0F0F0F",
     backgroundColor: "#1C1C1E",
-    marginTop:60
+    marginTop: 60,
   },
   verifiedBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     backgroundColor: "#0F0F0F",

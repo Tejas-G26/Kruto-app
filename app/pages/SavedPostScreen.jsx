@@ -341,12 +341,6 @@ const SavedPostScreen = ({ navigation }) => {
             <Text adjustsFontSizeToFit style={styles.emptySubtitle}>
               Posts you save will appear here
             </Text>
-            <TouchableOpacity 
-              style={styles.exploreButton}
-              onPress={() => navigation.navigate("p")}
-            >
-              <Text adjustsFontSizeToFit style={styles.exploreButtonText}>Explore Posts</Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <>

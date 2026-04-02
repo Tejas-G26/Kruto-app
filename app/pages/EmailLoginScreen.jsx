@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -68,6 +69,7 @@ export const EmailLoginScreen = ({ navigation }) => {
               />
             </View>
           </View>
+        
 
           {/* Title Section */}
           <View style={styles.titleContainer}>

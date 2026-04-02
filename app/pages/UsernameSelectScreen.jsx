@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -107,7 +108,11 @@ export const UsernameSelectScreen = ({ navigation }) => {
           {/* Logo Section */}
           <View style={styles.logoContainer}>
             <View style={styles.logoWrapper}>
-              <Icons name="leaf" size={60} color="#3897f0" />
+               <Image
+                             source={require("../../assets/images/Kruto_Logo.png")}
+                             style={styles.logo}
+                             resizeMode="contain"
+                           />
             </View>
           </View>
 
@@ -118,11 +123,11 @@ export const UsernameSelectScreen = ({ navigation }) => {
             </Text>
             <Text style={styles.subtitle}>Farming Community</Text>
             <View style={styles.descContainer}>
-              <View style={styles.dot} />
+            
               <Text style={styles.desc}>
                 Connect with farmers and grow together
               </Text>
-              <View style={styles.dot} />
+          
             </View>
           </View>
 
@@ -240,17 +245,23 @@ const styles = StyleSheet.create({
 
   logoContainer: {
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 20,
     marginBottom: 20,
   },
 
   logoWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     backgroundColor: "rgba(56, 151, 240, 0.1)",
     justifyContent: "center",
     alignItems: "center",
+    padding:10,
+  },
+  
+  logo: {
+    width: 110,
+    height: 110,
   },
 
   titleContainer: {

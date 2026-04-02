@@ -437,7 +437,7 @@ const BusinessListiningEditScreen = () => {
         {/* Add Button */}
         {(existingImages.length + newImages.length) < 4 && (
           <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
-            <Icons name="camera" size={32} color="#3897f0" />
+            <Icons name="camera" size={25} color="#3897f0" />
             <Text adjustsFontSizeToFit style={styles.addImageText}>Add Photo</Text>
             <Text adjustsFontSizeToFit style={styles.imageCount}>{existingImages.length + newImages.length}/4</Text>
           </TouchableOpacity>
@@ -1269,12 +1269,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addImageBtn: {
-    width: (width - 52) / 2,
-    height: (width - 52) / 2,
+    width: (width - -280) / 2,
+    height: (width - 180) / 2,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#3897f0",
-    borderStyle: "dashed",
+    borderColor: "#3d3d3d",
+    //borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#1C1C1E",

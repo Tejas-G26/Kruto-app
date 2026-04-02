@@ -41,6 +41,7 @@ const HomeScreen = ({ navigation }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   const [userId, setUserId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const onEndReachedCalledDuringMomentum = useRef(false);
 
@@ -183,6 +184,12 @@ const HomeScreen = ({ navigation }) => {
   } finally {
     setLoadingFollowers(false);
   }
+};
+
+const onRefresh = async () => {
+  setRefreshing(true);
+  await FetchPost();   // reload posts
+  setRefreshing(false);
 };
 
   // 🔥 INITIAL FETCH with user data and likes/comments count
@@ -481,7 +488,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const sharePost = async (post_id) => {
-    const link = `kruto://post/${post_id}`; // ✅ correct
+    const link = `https://kruto-app.netlify.app/post/${post_id}`; // ✅ correct
   
     await Share.share({
       message:'Kruto post : '+ link,
@@ -493,38 +500,40 @@ const HomeScreen = ({ navigation }) => {
   }
 
   useEffect(() => {
-    const initialize = async () => {
-      const user = await getCurrentUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        await fetchFollowersProfiles(user.id);
-        
-        // Subscribe to real-time follow changes
-        const subscription = supabase
-          .channel('user_follows_changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'user_follows',
-              filter: `following_id=eq.${user.id}`
-            },
-            () => {
-              fetchFollowersProfiles(user.id);
-            }
-          )
-          .subscribe();
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      }
-    };
-    
-    initialize();
-    FetchPost();
-  }, []);
+  let subscription;
+
+  const initialize = async () => {
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    setCurrentUserId(user.id);
+    await fetchFollowersProfiles(user.id);
+
+    subscription = supabase
+      .channel("user_follows_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_follows",
+          filter: `following_id=eq.${user.id}`,
+        },
+        () => {
+          fetchFollowersProfiles(user.id);
+        }
+      )
+      .subscribe();
+  };
+
+  initialize();
+
+  return () => {
+    if (subscription) {
+      supabase.removeChannel(subscription); // ✅ IMPORTANT
+    }
+  };
+}, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -713,7 +722,7 @@ const HomeScreen = ({ navigation }) => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {loadingFollowers ? (
             <View style={styles.loadingStories}>
-              <ActivityIndicator size="small" color="#00ff51" />
+              <ActivityIndicator size="small" color="#3897f0" />
             </View>
           ) : followersProfiles.length > 0 ? (
             followersProfiles.map((profile) => (
@@ -746,6 +755,8 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item.post_id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 5 }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onMomentumScrollBegin={() => {
           onEndReachedCalledDuringMomentum.current = false;
         }}
@@ -756,6 +767,7 @@ const HomeScreen = ({ navigation }) => {
           }
         }}
         onEndReachedThreshold={0.3}
+        renderItem={renderPost}
         ListEmptyComponent={
           isSearchOpen && !isSearching && searchQuery.length >= 0 ? (
             <View style={styles.emptySearchContainer}>
@@ -776,10 +788,14 @@ const HomeScreen = ({ navigation }) => {
               <ActivityIndicator size="small" color="#3897f0" />
               <Text adjustsFontSizeToFit style={{ color: "#878787", marginLeft: 10 }}>Loading more...</Text>
             </View>
-          ) : null
+          ) : (
+            <View style={{alignItems:'center',justifyContent:'center'}}>
+              <Text style={{color:'#fff',fontSize:15}}>No post yet</Text>
+            </View>
+          )
         }
        
-        renderItem={renderPost}
+       
        
       />
     </SafeAreaView>

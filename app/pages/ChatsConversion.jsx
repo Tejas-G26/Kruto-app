@@ -9,6 +9,7 @@ import {
   TextInput,
   Animated,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { supabase } from "../../lib/supabase";
@@ -22,7 +23,6 @@ const { width } = Dimensions.get("window");
 
 const SECRET_KEY = process.env.EXPO_PUBLIC_SECRET_KEY;
 
-
 const ChatsConversion = ({ navigation }) => {
   const [chats, setChats] = useState([]);
   const [filteredChats, setFilteredChats] = useState([]);
@@ -33,6 +33,9 @@ const ChatsConversion = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const searchAnim = useRef(new Animated.Value(0)).current;
   const inputRef = useRef(null);
+  const realtimeChannelRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const fetchTimeoutRef = useRef(null);
 
   // Get current user
   const getCurrentUser = useCallback(async () => {
@@ -49,74 +52,81 @@ const ChatsConversion = ({ navigation }) => {
     }
   }, []);
 
-// 🔐 DECRYPT FUNCTION
-const decryptMessage = (cipherText) => {
-  try {
-    const bytes = CryptoJS.AES.decrypt(cipherText, SECRET_KEY);
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-    return decrypted || cipherText;
-  } catch (e) {
-    console.log("Decrypt error:", e);
-    return cipherText;
-  }
-};
+  // 🔐 DECRYPT FUNCTION
+  const decryptMessage = useCallback((cipherText) => {
+    if (!cipherText) return "";
+    try {
+      const bytes = CryptoJS.AES.decrypt(cipherText, SECRET_KEY);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+      return decrypted || cipherText;
+    } catch (e) {
+      console.log("Decrypt error:", e);
+      return cipherText;
+    }
+  }, []);
 
   // Format time
   const formatChatTime = useCallback((timestamp) => {
-  if (!timestamp) return "";
+    if (!timestamp) return "";
 
-  let d;
+    let d;
 
-  // 🔥 FIX: handle Supabase timestamp correctly
-  if (typeof timestamp === "string") {
-    // convert "2026-03-30 18:45:12" → ISO format
-    const iso = timestamp.replace(" ", "T");
+    try {
+      if (typeof timestamp === "string") {
+        const iso = timestamp.replace(" ", "T");
+        d = new Date(iso + "Z");
+      } else {
+        d = new Date(timestamp);
+      }
 
-    // force UTC handling properly
-    d = new Date(iso + "Z");
-  } else {
-    d = new Date(timestamp);
-  }
+      if (isNaN(d.getTime())) return "";
 
-  if (isNaN(d.getTime())) return "";
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
 
-  const now = new Date();
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
 
-  const diffMs = now - d;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
+      if (diffHours < 24 && d.toDateString() === now.toDateString()) {
+        return `${diffHours}h ago`;
+      }
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
 
-  if (
-    diffHours < 24 &&
-    d.toDateString() === now.toDateString()
-  ) {
-    return `${diffHours}h ago`;
-  }
+      if (d.toDateString() === yesterday.toDateString()) {
+        return "Yesterday";
+      }
 
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
+      if (diffDays < 7) return `${diffDays}d ago`;
 
-  if (d.toDateString() === yesterday.toDateString()) {
-    return "Yesterday";
-  }
+      return d.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      });
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "";
+    }
+  }, []);
 
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return d.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  });
-}, []);
-
-  // Fetch chats
+  // Fetch chats with improved error handling
   const fetchChats = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
     try {
       const user = await getCurrentUser();
-      if (!user?.id) return;
+      if (!user?.id) {
+        if (isMountedRef.current) {
+          setChats([]);
+          setFilteredChats([]);
+          setIsLoading(false);
+        }
+        return;
+      }
 
       const currentUserIdValue = user.id;
       setCurrentUserId(currentUserIdValue);
@@ -126,61 +136,144 @@ const decryptMessage = (cipherText) => {
         .select("*")
         .or(`user1_id.eq.${currentUserIdValue},user2_id.eq.${currentUserIdValue}`);
 
-      if (convError || !conversations?.length) {
-        setChats([]);
-        setFilteredChats([]);
+      if (convError) {
+        console.error("Error fetching conversations:", convError);
+        if (isMountedRef.current) {
+          setChats([]);
+          setFilteredChats([]);
+        }
         return;
       }
 
-      // Process conversations in parallel with Promise.all for better performance
-      const chatList = await Promise.all(
-        conversations.map(async (conv) => {
-          const otherUserId = conv.user1_id === currentUserIdValue
-            ? conv.user2_id
-            : conv.user1_id;
+      if (!conversations?.length) {
+        if (isMountedRef.current) {
+          setChats([]);
+          setFilteredChats([]);
+        }
+        return;
+      }
 
-          const [userResult, messageResult] = await Promise.allSettled([
-            supabase
-              .from("users")
-              .select("full_name, username, profile_image_url, is_online, last_seen")
-              .eq("user_id", otherUserId)
-              .single(),
-            supabase
-              .from("messages")
-              .select("message_text, created_at")
-              .eq("conversation_id", conv.conversation_id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle(),
-          ]);
+      // Process conversations in batches to avoid overwhelming the system
+      const batchSize = 10;
+      const chatList = [];
+      
+      for (let i = 0; i < conversations.length; i += batchSize) {
+        const batch = conversations.slice(i, i + batchSize);
+        const batchResults = await Promise.allSettled(
+          batch.map(async (conv) => {
+            const otherUserId = conv.user1_id === currentUserIdValue
+              ? conv.user2_id
+              : conv.user1_id;
 
-          const userData = userResult.status === "fulfilled" ? userResult.value.data : null;
-          const messageData = messageResult.status === "fulfilled" ? messageResult.value.data : null;
+            const [userResult, messageResult] = await Promise.allSettled([
+              supabase
+                .from("users")
+                .select("full_name, username, profile_image_url, is_online, last_seen")
+                .eq("user_id", otherUserId)
+                .single(),
+              supabase
+                .from("messages")
+                .select("message_text, created_at")
+                .eq("conversation_id", conv.conversation_id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            ]);
 
-          return {
-            conversationId: conv.conversation_id,
-            userId: otherUserId,
-            user: userData,
-            lastMessage: messageData?.message_text ? decryptMessage(messageData.message_text): "",
-            lastTime: messageData?.created_at || conv.created_at,
-          };
-        })
+            const userData = userResult.status === "fulfilled" ? userResult.value.data : null;
+            const messageData = messageResult.status === "fulfilled" ? messageResult.value.data : null;
+
+            return {
+              conversationId: conv.conversation_id,
+              userId: otherUserId,
+              user: userData,
+              lastMessage: messageData?.message_text ? decryptMessage(messageData.message_text) : "",
+              lastTime: messageData?.created_at || conv.created_at,
+            };
+          })
+        );
+        
+        const validResults = batchResults
+          .filter(result => result.status === "fulfilled")
+          .map(result => result.value)
+          .filter(chat => chat.user !== null);
+        
+        chatList.push(...validResults);
+      }
+
+      // Sort chats by last message time
+      const validChats = chatList.sort((a, b) => 
+        new Date(b.lastTime) - new Date(a.lastTime)
       );
 
-      // Filter out conversations with missing user data and sort
-      const validChats = chatList
-        .filter(chat => chat.user !== null)
-        .sort((a, b) => new Date(b.lastTime) - new Date(a.lastTime));
-
-      setChats(validChats);
-      setFilteredChats(validChats);
+      if (isMountedRef.current) {
+        setChats(validChats);
+        setFilteredChats(validChats);
+      }
     } catch (error) {
       console.error("Error fetching chats:", error);
+      if (isMountedRef.current) {
+        Alert.alert("Error", "Failed to load conversations. Please try again.");
+      }
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [getCurrentUser]);
+  }, [getCurrentUser, decryptMessage]);
+
+  // Setup realtime subscription with proper error handling
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!currentUserId) return;
+
+    // Clean up existing subscription if any
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+
+    try {
+      // Create and subscribe to the channel with proper order
+      const channel = supabase.channel("chat-list");
+      
+      // Add postgres_changes before subscribing
+      channel
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${currentUserId}`,
+          },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            
+            // Debounce fetch to avoid multiple rapid updates
+            if (fetchTimeoutRef.current) {
+              clearTimeout(fetchTimeoutRef.current);
+            }
+            fetchTimeoutRef.current = setTimeout(() => {
+              if (isMountedRef.current) {
+                fetchChats();
+              }
+            }, 500);
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) {
+            console.error("Realtime subscription error:", err);
+          } else if (status === "SUBSCRIBED") {
+            console.log("Realtime subscription established");
+          }
+        });
+
+      realtimeChannelRef.current = channel;
+    } catch (error) {
+      console.error("Error setting up realtime subscription:", error);
+    }
+  }, [currentUserId, fetchChats]);
 
   // Fetch on focus
   useFocusEffect(
@@ -189,32 +282,34 @@ const decryptMessage = (cipherText) => {
     }, [fetchChats])
   );
 
-  // Realtime updates with debounce
+  // Setup realtime subscription when currentUserId changes
   useEffect(() => {
-    let timeout;
-    let isSubscribed = true;
-
-    const channel = supabase
-      .channel("chat-list")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        () => {
-          if (!isSubscribed) return;
-          clearTimeout(timeout);
-          timeout = setTimeout(() => {
-            if (isSubscribed) fetchChats();
-          }, 500);
-        }
-      )
-      .subscribe();
-
+    if (currentUserId) {
+      setupRealtimeSubscription();
+    }
+    
     return () => {
-      isSubscribed = false;
-      clearTimeout(timeout);
-      supabase.removeChannel(channel);
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
     };
-  }, [fetchChats]);
+  }, [currentUserId, setupRealtimeSubscription]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Search filter with memoization
   useEffect(() => {
@@ -273,6 +368,15 @@ const decryptMessage = (cipherText) => {
     fetchChats();
   }, [fetchChats]);
 
+  // Navigate to chat
+  const navigateToChat = useCallback((item) => {
+    navigation.navigate("chat", {
+      currentUserId,
+      otherUserId: item.userId,
+      conversationId: item.conversationId,
+    });
+  }, [currentUserId, navigation]);
+
   // Memoized render item
   const renderItem = useCallback(
     ({ item, index }) => (
@@ -282,13 +386,7 @@ const decryptMessage = (cipherText) => {
           styles.chatItem,
           index === 0 && styles.firstChatItem,
         ]}
-        onPress={() =>
-          navigation.navigate("chat", {
-            currentUserId,
-            otherUserId: item.userId,
-            conversationId: item.conversationId,
-          })
-        }
+        onPress={() => navigateToChat(item)}
       >
         <View style={styles.avatarContainer}>
           <Image
@@ -297,6 +395,7 @@ const decryptMessage = (cipherText) => {
             }}
             style={styles.avatar}
             defaultSource={require('../../assets/images/default-avatar.png')}
+            onError={(error) => console.log("Image loading error:", error)}
           />
           <View
             style={[
@@ -315,7 +414,7 @@ const decryptMessage = (cipherText) => {
               @{item.user?.username || "unknown"}
             </Text>
           </View>
-          <Text  style={styles.message} numberOfLines={1}>
+          <Text style={styles.message} numberOfLines={1}>
             {item.lastMessage || "No messages yet"}
           </Text>
         </View>
@@ -327,7 +426,7 @@ const decryptMessage = (cipherText) => {
         </View>
       </TouchableOpacity>
     ),
-    [currentUserId, formatChatTime, isOnline, navigation]
+    [formatChatTime, isOnline, navigateToChat]
   );
 
   // Memoized empty component
@@ -337,7 +436,9 @@ const decryptMessage = (cipherText) => {
         <View style={styles.emptyIconContainer}>
           <Icons name="chatbubbles-outline" size={50} color="#8E8E93" />
         </View>
-        <Text adjustsFontSizeToFit style={styles.emptyStateTitle}>No conversations yet</Text>
+        <Text adjustsFontSizeToFit style={styles.emptyStateTitle}>
+          No conversations yet
+        </Text>
         <Text adjustsFontSizeToFit style={styles.emptyStateText}>
           Start a conversation by finding friends to chat with
         </Text>
@@ -347,7 +448,7 @@ const decryptMessage = (cipherText) => {
   );
 
   // Memoized key extractor
-  const keyExtractor = useCallback((item) => item.conversationId, []);
+  const keyExtractor = useCallback((item) => item.conversationId.toString(), []);
 
   // Animation interpolations
   const searchBarWidth = searchAnim.interpolate({
@@ -376,7 +477,9 @@ const decryptMessage = (cipherText) => {
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#3897f0" />
-            <Text adjustsFontSizeToFit style={styles.loadingText}>Loading conversations...</Text>
+            <Text adjustsFontSizeToFit style={styles.loadingText}>
+              Loading conversations...
+            </Text>
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -406,7 +509,9 @@ const decryptMessage = (cipherText) => {
             ]}
             pointerEvents="none"
           >
-            <Text adjustsFontSizeToFit style={styles.headerTitle}>Messages</Text>
+            <Text adjustsFontSizeToFit style={styles.headerTitle}>
+              Messages
+            </Text>
             {filteredChats.length > 0 && (
               <View style={styles.headerBadge}>
                 <Text adjustsFontSizeToFit style={styles.headerBadgeText}>
@@ -472,6 +577,9 @@ const decryptMessage = (cipherText) => {
           refreshing={refreshing}
           onRefresh={handleRefresh}
           ListEmptyComponent={ListEmptyComponent}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+          }}
         />
       </SafeAreaView>
     </LinearGradient>
