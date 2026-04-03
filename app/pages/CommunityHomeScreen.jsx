@@ -144,7 +144,7 @@ const CommunityHomeScreen = ({ navigation }) => {
           <Image
             style={styles.userAvatar}
             source={{
-              uri: item.profile_image_url || "https://via.placeholder.com/50",
+              uri: item.profile_image_url || "https://iili.io/BoNMnj4.md.png",
             }}
           />
 
@@ -238,10 +238,10 @@ const CommunityHomeScreen = ({ navigation }) => {
 
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        {/*<View style={styles.statCard}>
           <Text adjustsFontSizeToFit style={styles.statNumber}>{stats.totalUsers}</Text>
           <Text adjustsFontSizeToFit style={styles.statLabel}>Total Users</Text>
-        </View>
+        </View>*/}
         <View style={styles.statCard}>
           <Text adjustsFontSizeToFit style={styles.statNumber}>{stats.following}</Text>
           <Text adjustsFontSizeToFit style={styles.statLabel}>Following</Text>

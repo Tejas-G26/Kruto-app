@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Alert, RefreshControl, ActivityIndicator, Modal } from "react-native";
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Alert, RefreshControl, ActivityIndicator, Modal,Share } from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
@@ -79,6 +79,15 @@ const BussinessListedScreen = ({ navigation }) => {
       listingData: listing 
     });
   };
+
+  const sharePost = async (business_id) => {
+      const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
+  
+      await Share.share({
+        message: "Kruto Business : " + link,
+      });
+    };
+  
 
   // Handle delete listing
   const handleDelete = async (listing) => {
@@ -227,7 +236,7 @@ const BussinessListedScreen = ({ navigation }) => {
           </View>
 
           {/* Description */}
-          <Text adjustsFontSizeToFit style={styles.description} numberOfLines={2}>
+          <Text style={styles.description} numberOfLines={2}>
             {item.description || "No description available"}
           </Text>
 
@@ -258,7 +267,9 @@ const BussinessListedScreen = ({ navigation }) => {
             </View>
             
             <View style={styles.footerRight}>
-              <TouchableOpacity style={styles.iconButton}>
+              <TouchableOpacity
+              onPress={() => sharePost(item.business_id)}
+              style={styles.iconButton}>
                 <Icons name="share-social-outline" size={16} color="#878787" />
               </TouchableOpacity>
             </View>
@@ -363,10 +374,14 @@ const BussinessListedScreen = ({ navigation }) => {
           <View style={styles.modalContent}>
             <TouchableOpacity 
               style={styles.modalOption}
-              onPress={() =>navigation.navigate('be', { 
-             businessId: selectedListing.business_id,
-            listingData: selectedListing// Optional: pass data to avoid extra fetch
-            }) }>
+              onPress={() => {
+  setShowOptionsModal(false); // ✅ CLOSE FIRST
+  navigation.navigate('be', { 
+    businessId: selectedListing.business_id,
+    listingData: selectedListing
+  });
+}}
+              >
               <Icons name="create-outline" size={24} color="#3897f0" />
               <Text adjustsFontSizeToFit style={styles.modalOptionText}>Edit Listing</Text>
             </TouchableOpacity>

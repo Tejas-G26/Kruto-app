@@ -1063,7 +1063,7 @@ const BusinessListiningEditScreen = () => {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <View style={styles.nextBtnContent}>
-                  <Text adjustsFontSizeToFit style={styles.nextBtnText}>{currentStep === 4 ? "Update Listing" : "Continue"}</Text>
+                  <Text adjustsFontSizeToFit style={styles.nextBtnText}>{currentStep === 4 ? "Update" : "Continue"}</Text>
                   <Icons name="arrow-forward" size={20} color="#fff" />
                 </View>
               )}
@@ -1269,8 +1269,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addImageBtn: {
-    width: (width - -280) / 2,
-    height: (width - 180) / 2,
+    width: (width - 52) / 2,
+    height: (width - 52) / 2,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "#3d3d3d",

@@ -285,7 +285,14 @@ const PostFullDetailCard = ({
             onPress={handleProfilePress}
             activeOpacity={0.7}
           >
-            <Image style={styles.profileImg} source={proimg} />
+           <Image
+  style={styles.profileImg}
+  source={
+    proimg && proimg.uri && proimg.uri.trim() !== ""
+      ? { uri: proimg.uri }
+      : require("../../assets/images/default-avatar.png") // your default image
+  }
+/>
             <View style={styles.profileTextSection}>
               <Text adjustsFontSizeToFit style={styles.username}>{name}</Text>
               {username && <Text adjustsFontSizeToFit style={styles.userHandle}>@{username}</Text>}
@@ -314,14 +321,14 @@ const PostFullDetailCard = ({
 
         {/* Title - Always show */}
         {title && (
-          <Text adjustsFontSizeToFit style={[styles.title, !hasImage && styles.titleNoImage]}>
+          <Text numberOfLines={1} style={[styles.title, !hasImage && styles.titleNoImage]}>
             {title}
           </Text>
         )}
 
         {/* Description - Always show */}
         {des && (
-          <Text adjustsFontSizeToFit numberOfLines={2} style={styles.desc}>
+          <Text numberOfLines={3} style={styles.desc}>
             {des}
           </Text>
         )}

@@ -37,7 +37,7 @@ const SavedPostScreen = ({ navigation }) => {
   // Fetch likes count for a specific post
   const fetchLikesCount = async (postId) => {
     const { count, error } = await supabase
-      .from("likes")
+      .from("post_likes")
       .select("*", { count: "exact", head: true })
       .eq("post_id", postId);
     

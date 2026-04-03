@@ -356,11 +356,35 @@ const ChatsConversion = ({ navigation }) => {
   }, []);
 
   // Check if user is online
-  const isOnline = useCallback((user) => {
-    if (!user?.last_seen) return false;
-    const diff = (Date.now() - new Date(user.last_seen).getTime()) / 1000;
-    return user.is_online && diff < 30;
-  }, []);
+   const isOnline = (user) => {
+  if (!user) return false;
+
+  // If explicitly online
+  if (user.is_online) return true;
+
+  // Check last seen (fallback)
+  if (!user.last_seen) return false;
+
+  const diff = (Date.now() - new Date(user.last_seen)) / 1000;
+
+  return diff < 120; // 2 min = still "online"
+};
+
+const getLastSeenText = (user) => {
+  if (!user?.last_seen) return "";
+
+  if (user.is_online) return "Active now";
+
+  const diff = Math.floor((Date.now() - new Date(user.last_seen)) / 60000);
+
+  if (diff < 1) return "Active now";
+  if (diff < 60) return `Last seen ${diff} min ago`;
+
+  const hours = Math.floor(diff / 60);
+  if (hours < 24) return `Last seen ${hours}h ago`;
+
+  return new Date(user.last_seen).toLocaleDateString();
+};
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
@@ -391,18 +415,15 @@ const ChatsConversion = ({ navigation }) => {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: item.user?.profile_image_url || "https://via.placeholder.com/56",
+              uri: item.user?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
             }}
             style={styles.avatar}
             defaultSource={require('../../assets/images/default-avatar.png')}
             onError={(error) => console.log("Image loading error:", error)}
           />
-          <View
-            style={[
-              styles.statusIndicator,
-              isOnline(item.user) && styles.onlineStatus,
-            ]}
-          />
+          {isOnline(item.user) && (
+  <View style={[styles.statusIndicator, styles.onlineStatus]} />
+)}
         </View>
 
         <View style={styles.chatInfo}>

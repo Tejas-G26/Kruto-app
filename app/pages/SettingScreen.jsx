@@ -60,7 +60,9 @@ const SettingScreen = ({ navigation }) => {
           Settings
         </Text>
 
-        <View style={{ width: 22 }} />
+       <TouchableOpacity>
+        
+       </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -98,7 +100,9 @@ const SettingScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity 
+         onPress={() => Linking.openURL("https://kruto-app.netlify.app")}
+        style={styles.settingItem}>
           <Icons name="lock-closed-outline" size={20} color="#fff" />
           <Text adjustsFontSizeToFit style={styles.settingText}>
             Privacy
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: "absolute",
-    left: 15,
+    left: 10,
     top: 10,
     backgroundColor: "#323232",
     width: 40,

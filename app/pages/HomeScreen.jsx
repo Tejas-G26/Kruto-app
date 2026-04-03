@@ -568,7 +568,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const sharePost = async (post_id) => {
-    const link = `kruto://post/${post_id}`;
+    const link = `https://kruto-app.netlify.app/post/${post_id}`;
 
     await Share.share({
       message: "Kruto post : " + link,
@@ -643,7 +643,7 @@ const HomeScreen = ({ navigation }) => {
               source={{
                 uri:
                   item.users?.profile_image_url ||
-                  "https://via.placeholder.com/40",
+                  "https://iili.io/BoNMnj4.md.png",
               }}
             />
             <View style={styles.profileTextSection}>
@@ -672,7 +672,7 @@ const HomeScreen = ({ navigation }) => {
 
           {/* Title - Always show */}
           <Text
-            adjustsFontSizeToFit
+           
             numberOfLines={1}
             style={[styles.title, !hasImage && styles.titleNoImage]}
           >
@@ -680,7 +680,7 @@ const HomeScreen = ({ navigation }) => {
           </Text>
 
           {/* Description - Always show */}
-          <Text adjustsFontSizeToFit numberOfLines={2} style={styles.desc}>
+          <Text numberOfLines={3} style={styles.desc}>
             {item.description}
           </Text>
         </TouchableOpacity>

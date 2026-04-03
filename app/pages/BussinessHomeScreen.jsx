@@ -180,7 +180,7 @@ const BussinessHomeScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.cardHeader}>
             <View style={styles.titleSection}>
-              <Text adjustsFontSizeToFit style={styles.title} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
               {item.condition && (
                 
                 <View style={[styles.conditionBadge, { backgroundColor: conditionColor + '20' }]}>
@@ -195,7 +195,7 @@ const BussinessHomeScreen = ({ navigation }) => {
           </View>
 
           {/* Description */}
-          <Text adjustsFontSizeToFit style={styles.description} numberOfLines={2}>
+          <Text style={styles.description} numberOfLines={2}>
             {item.description || "No description available"}
           </Text>
 

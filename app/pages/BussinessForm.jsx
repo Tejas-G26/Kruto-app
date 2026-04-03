@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const BusinessForm = () => {
   const navigation = useNavigation();
@@ -231,6 +232,19 @@ const BusinessForm = () => {
       setImages([...images, newImage]);
     }
   };
+
+  const onDateChange = (event, selectedDate) => {
+  if (Platform.OS === "android") {
+    setShowDatePicker({ field: null, show: false });
+  }
+
+  if (selectedDate && showDatePicker.field) {
+    setFormData((prev) => ({
+      ...prev,
+      [showDatePicker.field]: selectedDate,
+    }));
+  }
+};
 
   const removeImage = (index) => {
     const newImages = [...images];
@@ -486,6 +500,16 @@ const BusinessForm = () => {
         </TouchableOpacity>
       </View>
 
+      {showDatePicker.show && (
+  <DateTimePicker
+    value={formData[showDatePicker.field] || new Date()}
+    mode="date"
+    display={Platform.OS === "ios" ? "spinner" : "default"}
+    onChange={onDateChange}
+    minimumDate={new Date()}
+  />
+)}
+
       {/* Availability Status */}
       <View style={styles.inputGroup}>
         <Text adjustsFontSizeToFit style={styles.inputLabel}>Availability Status</Text>
@@ -496,7 +520,7 @@ const BusinessForm = () => {
             style={styles.picker}
             dropdownIconColor="#878787"
           >
-            <Picker.Item label="Available" value="Available)" />
+            <Picker.Item label="Available" value="Available" />
             <Picker.Item label="Not Available" value="Not Available" />
           </Picker>
         </View>
@@ -876,7 +900,7 @@ const BusinessForm = () => {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <View style={styles.nextBtnContent}>
-                  <Text adjustsFontSizeToFit style={styles.nextBtnText}>{currentStep === 4 ? "List Equipment" : "Continue"}</Text>
+                  <Text adjustsFontSizeToFit style={styles.nextBtnText}>{currentStep === 4 ? "List" : "Continue"}</Text>
                   <Icons name="arrow-forward" size={20} color="#fff" />
                 </View>
               )}
@@ -1046,8 +1070,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addImageBtn: {
-    width: (width - -280) / 2,
-    height: (width - 180) / 2,
+    width: (width - 52) / 2,
+    height: (width - 52) / 2,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "#505050",
@@ -1096,6 +1120,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 12,
   },
+  
+
   textAreaContainer: {
     alignItems: "flex-start",
     paddingVertical: 8,

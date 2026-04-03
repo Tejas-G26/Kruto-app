@@ -271,7 +271,7 @@ useEffect(() => {
           <View style={styles.avatarWrapper}>
             <Image
               style={styles.avatar}
-              source={{ uri: user.profile_image_url }}
+              source={{ uri: user?.profile_image_url || "https://iili.io/BoNMnj4.md.png" }}
               resizeMode="cover"
             />
             <View style={styles.verifiedBadge}>

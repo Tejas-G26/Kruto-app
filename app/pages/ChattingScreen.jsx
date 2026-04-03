@@ -405,7 +405,7 @@ const renderItem = ({ item, index }) => {
       >
         {!isMe && (
           <Image
-            source={{ uri: receiver?.profile_image_url || 'https://via.placeholder.com/36' }}
+            source={{ uri: receiver?.profile_image_url || 'https://iili.io/BoNMnj4.md.png' }}
             style={styles.messageAvatar}
           />
         )}
@@ -472,7 +472,7 @@ const renderItem = ({ item, index }) => {
             >
               
               <Image
-                source={{ uri: receiver.profile_image_url || 'https://via.placeholder.com/44' }}
+                source={{ uri: receiver.profile_image_url || 'https://iili.io/BoNMnj4.md.png' }}
                 style={styles.avatar}
                 defaultSource={require('../../assets/images/default-avatar.png')}
               />

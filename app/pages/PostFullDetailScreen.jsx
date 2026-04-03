@@ -31,6 +31,7 @@ const PostFullDetailScreen = (props) => {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [commentLikes, setCommentLikes] = useState({});
+  const [currentUserData, setCurrentUserData] = useState(null);
 
   // 🔥 FORMAT DATE
   const formatDate = (dateString) => {
@@ -52,6 +53,7 @@ const PostFullDetailScreen = (props) => {
       year: "numeric",
     });
   };
+  
 
   // Format count for likes/comments (K, M)
   const formatCount = (count) => {
@@ -69,6 +71,18 @@ const PostFullDetailScreen = (props) => {
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
+
+
+    // ✅ ADD THIS HERE
+ if (currentUser?.id) {
+  const { data: currentUserProfile } = await supabase
+    .from("users")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .single();
+
+  setCurrentUserData(currentUserProfile);
+}
 
     // post
     const { data: postData } = await supabase
@@ -341,7 +355,7 @@ const PostFullDetailScreen = (props) => {
           style={styles.commentProfileImg}
           source={{
             uri:
-              item.users?.profile_image_url || "https://via.placeholder.com/40",
+              item.users?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
           }}
         />
         <View style={styles.commentContent}>
@@ -561,13 +575,14 @@ const PostFullDetailScreen = (props) => {
 
           {/* Comment Input */}
           <View style={styles.commentInputContainer}>
-            <Image
-              style={styles.inputProfileImg}
-              source={{
-                uri:
-                  user?.profile_image_url || "https://via.placeholder.com/40",
-              }}
-            />
+           <Image
+  style={styles.inputProfileImg}
+  source={{
+    uri:
+      currentUserData?.profile_image_url ||
+      "https://iili.io/BoNMnj4.md.png",
+  }}
+/>
             <TextInput
               style={styles.commentInput}
               placeholder="Add a comment..."

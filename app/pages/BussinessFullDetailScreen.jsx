@@ -580,6 +580,9 @@ const BussinessFullDetailScreen = (props) => {
             <Icons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Product Details</Text>
+          <TouchableOpacity>
+
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -787,7 +790,7 @@ const BussinessFullDetailScreen = (props) => {
               <View style={styles.detailItem}>
                 <Icons name="location" size={18} color="#ff6b6b" />
                 <View>
-                  <Text adjustsFontSizeToFit style={styles.detailLabel}>
+                  <Text style={styles.detailLabel}>
                     Location
                   </Text>
                   <Text adjustsFontSizeToFit style={styles.detailValue}>
@@ -796,6 +799,9 @@ const BussinessFullDetailScreen = (props) => {
                   </Text>
                 </View>
               </View>
+
+          
+
 
               <View style={styles.detailItem}>
                 <Icons
@@ -1078,7 +1084,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
-    marginRight: 100,
+    
   },
   scrollContent: {
     flexGrow: 1,
@@ -1095,7 +1101,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   postImage: {
-    width: "100%",
+    width: width,
     height: 300,
     resizeMode: "cover",
   },
