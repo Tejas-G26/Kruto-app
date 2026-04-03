@@ -12,7 +12,8 @@ import {
   Alert,
   TextInput,
   Modal,
-  AppState
+  AppState,
+  RefreshControl,
 } from "react-native";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,11 +30,12 @@ const HomeScreen = ({ navigation }) => {
   const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [likedPosts, setLikedPosts] = useState({});
   const [followersProfiles, setFollowersProfiles] = useState([]);
   const [loadingFollowers, setLoadingFollowers] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
-  
+
   // Search states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,11 +43,10 @@ const HomeScreen = ({ navigation }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   const [userId, setUserId] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const onEndReachedCalledDuringMomentum = useRef(false);
 
-    // 🔹 Get user + listen auth
+  // 🔹 Get user + listen auth
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getSession();
@@ -57,7 +58,7 @@ const HomeScreen = ({ navigation }) => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUserId(session?.user?.id || null);
-      }
+      },
     );
 
     return () => {
@@ -79,7 +80,6 @@ const HomeScreen = ({ navigation }) => {
         .eq("user_id", userId);
     };
 
-    // app open
     updateStatus(true);
 
     const sub = AppState.addEventListener("change", (state) => {
@@ -105,92 +105,165 @@ const HomeScreen = ({ navigation }) => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   // Format count for likes/comments (K, M)
   const formatCount = (count) => {
-    if (!count) return '0';
+    if (!count) return "0";
     if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
+      return (count / 1000000).toFixed(1) + "M";
     } else if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
+      return (count / 1000).toFixed(1) + "K";
     }
     return count.toString();
   };
 
   // 🔥 GET CURRENT USER
   const getCurrentUser = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (error) {
-      console.error('Error getting user:', error);
+      console.error("Error getting user:", error);
       return null;
     }
     return user;
   };
 
   // 🔥 FETCH FOLLOWERS PROFILES FROM user_follows TABLE
- const fetchFollowersProfiles = async (userId) => {
-  try {
-    setLoadingFollowers(true);
+  const fetchFollowersProfiles = async (userId) => {
+    try {
+      setLoadingFollowers(true);
 
-    const { data, error } = await supabase
-      .from("user_follows")
-      .select(`
-        following_id,
-        users!user_follows_following_id_fkey (
-          user_id,
-          username,
-          full_name,
-          profile_image_url,
-          bio
+      const { data, error } = await supabase
+        .from("user_follows")
+        .select(
+          `
+          following_id,
+          users!user_follows_following_id_fkey (
+            user_id,
+            username,
+            full_name,
+            profile_image_url,
+            bio
+          )
+        `,
         )
-      `)
-      .eq("follower_id", userId); // ✅ YOU FOLLOW OTHERS
+        .eq("follower_id", userId);
 
-    if (error) {
-      console.log("Error:", error);
-      setFollowersProfiles([]);
-      return;
+      if (error) {
+        console.log("Error:", error);
+        setFollowersProfiles([]);
+        return;
+      }
+
+      const formatted = data
+        .map((item) => item.users)
+        .filter((user) => user !== null)
+        .map((user) => ({
+          id: user.user_id,
+          name: user.full_name || user.username || "User",
+          username: user.username,
+          image: user.profile_image_url
+            ? { uri: user.profile_image_url }
+            : require("../../assets/images/default-avatar.jpg"),
+          color: "#3897f0",
+          bio: user.bio || "",
+        }));
+
+      setFollowersProfiles(formatted);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoadingFollowers(false);
     }
+  };
 
-    const formatted = data
-      .map(item => item.users)
-      .filter(user => user !== null) // safety
-      .map(user => ({
-        id: user.user_id,
-        name: user.full_name || user.username || "User",
-        username: user.username,
-        image: user.profile_image_url
-          ? { uri: user.profile_image_url }
-          : require("../../assets/images/default-avatar.jpg"),
-        color: "#3897f0",
-        bio: user.bio || "",
-      }));
+  // 🔥 REFRESH FUNCTION - Load new posts from the top
+  const refreshPosts = async () => {
+    setRefreshing(true);
 
-    setFollowersProfiles(formatted);
+    try {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
 
-  } catch (err) {
-    console.log(err);
-  } finally {
-    setLoadingFollowers(false);
-  }
-};
+      const { data, error } = await supabase
+        .from("posts")
+        .select(
+          `
+          *,
+          users (
+            user_id,
+            full_name,
+            username,
+            profile_image_url
+          )
+        `,
+        )
+        .order("created_at", { ascending: false })
+        .range(0, LIMIT - 1);
 
-const onRefresh = async () => {
-  setRefreshing(true);
-  await FetchPost();   // reload posts
-  setRefreshing(false);
-};
+      if (error) {
+        console.log("Error refreshing posts:", error);
+      } else if (data && data.length > 0) {
+        const postsWithCounts = await Promise.all(
+          data.map(async (post) => {
+            const { count: likesCount } = await supabase
+              .from("post_likes")
+              .select("*", { count: "exact", head: true })
+              .eq("post_id", post.post_id);
+
+            const { count: commentsCount } = await supabase
+              .from("comments")
+              .select("*", { count: "exact", head: true })
+              .eq("post_id", post.post_id);
+
+            const { data: likeData } = await supabase
+              .from("post_likes")
+              .select("*")
+              .eq("post_id", post.post_id)
+              .eq("user_id", currentUser?.id);
+
+            return {
+              ...post,
+              likes_count: likesCount || 0,
+              comments_count: commentsCount || 0,
+              is_liked: likeData && likeData.length > 0,
+            };
+          }),
+        );
+
+        setPostData(postsWithCounts);
+
+        const likedState = {};
+        postsWithCounts.forEach((post) => {
+          if (post.is_liked) {
+            likedState[post.post_id] = true;
+          }
+        });
+        setLikedPosts(likedState);
+
+        setPage(1);
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+      Alert.alert("Error", "Failed to refresh posts");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // 🔥 INITIAL FETCH with user data and likes/comments count
   const FetchPost = async () => {
@@ -201,7 +274,8 @@ const onRefresh = async () => {
 
     const { data, error } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         *,
         users (
           user_id,
@@ -209,7 +283,8 @@ const onRefresh = async () => {
           username,
           profile_image_url
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false })
       .range(0, LIMIT - 1);
 
@@ -238,21 +313,21 @@ const onRefresh = async () => {
             ...post,
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
-            is_liked: likeData && likeData.length > 0
+            is_liked: likeData && likeData.length > 0,
           };
-        })
+        }),
       );
 
       setPostData(postsWithCounts);
-      
+
       const likedState = {};
-      postsWithCounts.forEach(post => {
+      postsWithCounts.forEach((post) => {
         if (post.is_liked) {
           likedState[post.post_id] = true;
         }
       });
       setLikedPosts(likedState);
-      
+
       setPage(1);
     }
     setLoading(false);
@@ -263,7 +338,7 @@ const onRefresh = async () => {
     if (loadingMore) return;
 
     setLoadingMore(true);
-    
+
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
@@ -273,7 +348,8 @@ const onRefresh = async () => {
 
     const { data, error } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         *,
         users (
           user_id,
@@ -281,7 +357,8 @@ const onRefresh = async () => {
           username,
           profile_image_url
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -308,24 +385,24 @@ const onRefresh = async () => {
             ...post,
             likes_count: likesCount || 0,
             comments_count: commentsCount || 0,
-            is_liked: likeData && likeData.length > 0
+            is_liked: likeData && likeData.length > 0,
           };
-        })
+        }),
       );
 
       setPostData((prev) => {
         const newData = postsWithCounts.filter(
-          (newItem) => !prev.some((item) => item.post_id === newItem.post_id)
+          (newItem) => !prev.some((item) => item.post_id === newItem.post_id),
         );
-        
+
         const newLikedState = { ...likedPosts };
-        postsWithCounts.forEach(post => {
+        postsWithCounts.forEach((post) => {
           if (post.is_liked) {
             newLikedState[post.post_id] = true;
           }
         });
         setLikedPosts(newLikedState);
-        
+
         return [...prev, ...newData];
       });
 
@@ -343,7 +420,7 @@ const onRefresh = async () => {
     }
 
     setIsSearching(true);
-    
+
     try {
       const {
         data: { user: currentUser },
@@ -351,7 +428,8 @@ const onRefresh = async () => {
 
       const { data, error } = await supabase
         .from("posts")
-        .select(`
+        .select(
+          `
           *,
           users (
             user_id,
@@ -359,7 +437,8 @@ const onRefresh = async () => {
             username,
             profile_image_url
           )
-        `)
+        `,
+        )
         .ilike("title", `%${query}%`)
         .order("created_at", { ascending: false });
 
@@ -389,9 +468,9 @@ const onRefresh = async () => {
               ...post,
               likes_count: likesCount || 0,
               comments_count: commentsCount || 0,
-              is_liked: likeData && likeData.length > 0
+              is_liked: likeData && likeData.length > 0,
             };
-          })
+          }),
         );
         setSearchResults(postsWithCounts);
       } else {
@@ -438,34 +517,37 @@ const onRefresh = async () => {
 
     if (!currentUser) return;
 
-    setLikedPosts(prev => ({
+    setLikedPosts((prev) => ({
       ...prev,
-      [postId]: !currentLikeStatus
+      [postId]: !currentLikeStatus,
     }));
 
-    setPostData(prevPosts =>
-      prevPosts.map(post =>
+    setPostData((prevPosts) =>
+      prevPosts.map((post) =>
         post.post_id === postId
           ? {
               ...post,
-              likes_count: currentLikeStatus ? currentLikesCount - 1 : currentLikesCount + 1,
-              is_liked: !currentLikeStatus
+              likes_count: currentLikeStatus
+                ? currentLikesCount - 1
+                : currentLikesCount + 1,
+              is_liked: !currentLikeStatus,
             }
-          : post
-      )
+          : post,
+      ),
     );
 
-    // Also update search results if needed
-    setSearchResults(prevResults =>
-      prevResults.map(post =>
+    setSearchResults((prevResults) =>
+      prevResults.map((post) =>
         post.post_id === postId
           ? {
               ...post,
-              likes_count: currentLikeStatus ? currentLikesCount - 1 : currentLikesCount + 1,
-              is_liked: !currentLikeStatus
+              likes_count: currentLikeStatus
+                ? currentLikesCount - 1
+                : currentLikesCount + 1,
+              is_liked: !currentLikeStatus,
             }
-          : post
-      )
+          : post,
+      ),
     );
 
     if (currentLikeStatus) {
@@ -475,72 +557,68 @@ const onRefresh = async () => {
         .eq("post_id", postId)
         .eq("user_id", currentUser.id);
     } else {
-      await supabase
-        .from("post_likes")
-        .insert([
-          {
-            post_id: postId,
-            user_id: currentUser.id,
-            created_at: new Date(),
-          },
-        ]);
+      await supabase.from("post_likes").insert([
+        {
+          post_id: postId,
+          user_id: currentUser.id,
+          created_at: new Date(),
+        },
+      ]);
     }
   };
 
   const sharePost = async (post_id) => {
-    const link = `https://kruto-app.netlify.app/post/${post_id}`; // ✅ correct
-  
+    const link = `kruto://post/${post_id}`;
+
     await Share.share({
-      message:'Kruto post : '+ link,
+      message: "Kruto post : " + link,
     });
   };
 
-  const Notification_Alert = ()=>{
-    Alert.alert('Notification Feature are not working')
-  }
+  const Notification_Alert = () => {
+    Alert.alert("Notification Feature are not working");
+  };
 
   useEffect(() => {
-  let subscription;
+    const initialize = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        await fetchFollowersProfiles(user.id);
 
-  const initialize = async () => {
-    const user = await getCurrentUser();
-    if (!user) return;
+        const channel = supabase.channel("user_follows_changes");
 
-    setCurrentUserId(user.id);
-    await fetchFollowersProfiles(user.id);
+        channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "user_follows",
+            filter: `following_id=eq.${user.id}`,
+          },
+          () => {
+            fetchFollowersProfiles(user.id);
+          },
+        );
 
-    subscription = supabase
-      .channel("user_follows_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "user_follows",
-          filter: `following_id=eq.${user.id}`,
-        },
-        () => {
-          fetchFollowersProfiles(user.id);
-        }
-      )
-      .subscribe();
-  };
+        const subscription = channel.subscribe();
 
-  initialize();
+        return () => {
+          subscription.unsubscribe();
+        };
+      }
+    };
 
-  return () => {
-    if (subscription) {
-      supabase.removeChannel(subscription); // ✅ IMPORTANT
-    }
-  };
-}, []);
+    initialize();
+    FetchPost();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       if (currentUserId) {
         fetchFollowersProfiles(currentUserId);
       }
-    }, [currentUserId])
+    }, [currentUserId]),
   );
 
   // Render each post
@@ -548,73 +626,97 @@ const onRefresh = async () => {
     const isLiked = likedPosts[item.post_id] || item.is_liked || false;
     const likesCount = item.likes_count || 0;
     const commentsCount = item.comments_count || 0;
+    const hasImage = item.image_url && item.image_url.trim() !== "";
 
     return (
       <View style={styles.card}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileSection}
-            onPress={() => navigation.navigate("oup", { user_id: item.user_id })}>
-            <Image 
-              style={styles.profileImg} 
-              source={{ uri: item.users?.profile_image_url || 'https://via.placeholder.com/40' }} 
+            onPress={() =>
+              navigation.navigate("oup", { user_id: item.user_id })
+            }
+          >
+            <Image
+              style={styles.profileImg}
+              source={{
+                uri:
+                  item.users?.profile_image_url ||
+                  "https://via.placeholder.com/40",
+              }}
             />
             <View style={styles.profileTextSection}>
-              <Text adjustsFontSizeToFit style={styles.username}>{item.users?.full_name || 'User'}</Text>
-              <Text adjustsFontSizeToFit style={styles.userHandle}>@{item.users?.username || 'user'}</Text>
+              <Text adjustsFontSizeToFit style={styles.username}>
+                {item.users?.full_name || "User"}
+              </Text>
+              <Text adjustsFontSizeToFit style={styles.userHandle}>
+                @{item.users?.username || "user"}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Post Image */}
+        {/* Post Image - Only show if image_url exists */}
         <TouchableOpacity
           onPress={() => navigation.navigate("pfv", { post_id: item.post_id })}
-          activeOpacity={0.9}>
-          <Image
-            style={styles.postImage}
-            resizeMode="cover"
-            source={{ uri: item.image_url }}
-          />
+          activeOpacity={0.9}
+        >
+          {hasImage && (
+            <Image
+              style={styles.postImage}
+              resizeMode="cover"
+              source={{ uri: item.image_url }}
+            />
+          )}
+
+          {/* Title - Always show */}
+          <Text
+            adjustsFontSizeToFit
+            numberOfLines={1}
+            style={[styles.title, !hasImage && styles.titleNoImage]}
+          >
+            {item.title}
+          </Text>
+
+          {/* Description - Always show */}
+          <Text adjustsFontSizeToFit numberOfLines={2} style={styles.desc}>
+            {item.description}
+          </Text>
         </TouchableOpacity>
-
-        {/* Title */}
-        <Text adjustsFontSizeToFit numberOfLines={1} style={styles.title}>
-          {item.title}
-        </Text>
-
-        {/* Description */}
-        <Text adjustsFontSizeToFit numberOfLines={2} style={styles.desc}>
-          {item.description}
-        </Text>
 
         {/* Engagement Stats */}
         <View style={styles.engagementStats}>
           <View style={styles.statItem}>
-            <Icons 
-              name={isLiked ? "heart" : "heart-outline"} 
-              size={14} 
-              color={isLiked ? "#ff6b6b" : "#878787"} 
+            <Icons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={14}
+              color={isLiked ? "#ff6b6b" : "#878787"}
             />
-            <Text adjustsFontSizeToFit style={[styles.statText, isLiked && styles.likedStatText]}>
+            <Text
+              adjustsFontSizeToFit
+              style={[styles.statText, isLiked && styles.likedStatText]}
+            >
               {formatCount(likesCount)} likes
             </Text>
           </View>
-          
+
           <View style={styles.statDivider} />
-          
+
           <View style={styles.statItem}>
             <Icons name="chatbubble-outline" size={14} color="#878787" />
             <Text adjustsFontSizeToFit style={styles.statText}>
               {formatCount(commentsCount)} comments
             </Text>
           </View>
-          
+
           <View style={styles.statDivider} />
-          
+
           <View style={styles.statItem}>
             <Icons name="time-outline" size={14} color="#878787" />
-            <Text adjustsFontSizeToFit style={styles.statText}>{formatDate(item.created_at)}</Text>
+            <Text adjustsFontSizeToFit style={styles.statText}>
+              {formatDate(item.created_at)}
+            </Text>
           </View>
         </View>
 
@@ -623,23 +725,28 @@ const onRefresh = async () => {
           <View style={styles.iconRow}>
             <TouchableOpacity
               onPress={() => toggleLike(item.post_id, isLiked, likesCount)}
-              style={[styles.iconBtn, isLiked && styles.likedBtn]}>
-              <Icons 
-                name={isLiked ? "heart" : "heart-outline"} 
-                size={20} 
-                color={isLiked ? "#ff6b6b" : "#fff"} 
+              style={[styles.iconBtn, isLiked && styles.likedBtn]}
+            >
+              <Icons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={20}
+                color={isLiked ? "#ff6b6b" : "#fff"}
               />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("pfv", { post_id: item.post_id })}
-              style={styles.iconBtn}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("pfv", { post_id: item.post_id })
+              }
+              style={styles.iconBtn}
+            >
               <Icons name="chatbubble-outline" size={20} color="#fff" />
             </TouchableOpacity>
 
-            <TouchableOpacity  
-            onPress={()=>sharePost(item.post_id)}
-            style={styles.iconBtn}>
+            <TouchableOpacity
+              onPress={() => sharePost(item.post_id)}
+              style={styles.iconBtn}
+            >
               <Icons name="share-social-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -665,27 +772,27 @@ const onRefresh = async () => {
         <View style={styles.profileRow}>
           {!isSearchOpen ? (
             <>
-              <Text adjustsFontSizeToFit style={styles.headertitlekruto}>Kruto</Text>
+              <Text adjustsFontSizeToFit style={styles.headertitlekruto}>
+                Kruto
+              </Text>
               <View style={styles.headerIcons}>
-                <TouchableOpacity 
-                  onPress={openSearch} 
-                  style={styles.iconCircleSearch}>
+                <TouchableOpacity
+                  onPress={openSearch}
+                  style={styles.iconCircleSearch}
+                >
                   <Icons name="search" size={20} color="#3897f0" />
                 </TouchableOpacity>
-
-                {/*<TouchableOpacity
-                  onPress={Notification_Alert}
-                  style={styles.iconCircle}>
-                  <Icons name="notifications-outline" size={20} color="#fff" />
-                </TouchableOpacity>*/}
-
-       
               </View>
             </>
           ) : (
             <>
               <View style={styles.searchContainer}>
-                <Icons name="search" size={20} color="#878787" style={styles.searchIcon} />
+                <Icons
+                  name="search"
+                  size={20}
+                  color="#878787"
+                  style={styles.searchIcon}
+                />
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search by title..."
@@ -695,12 +802,18 @@ const onRefresh = async () => {
                   autoFocus={true}
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery("")}
+                    style={styles.clearButton}
+                  >
                     <Icons name="close-circle" size={20} color="#878787" />
                   </TouchableOpacity>
                 )}
               </View>
-              <TouchableOpacity onPress={closeSearch} style={styles.closeButton}>
+              <TouchableOpacity
+                onPress={closeSearch}
+                style={styles.closeButton}
+              >
                 <Icons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </>
@@ -713,16 +826,19 @@ const onRefresh = async () => {
         <View style={{ alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => navigation.navigate("cp")}
-            style={styles.addStory}>
+            style={styles.addStory}
+          >
             <Icons name="add" size={30} color="#3897f0" />
           </TouchableOpacity>
-          <Text adjustsFontSizeToFit style={{ fontSize: 12, color: "#fff" }}>Create</Text>
+          <Text adjustsFontSizeToFit style={{ fontSize: 12, color: "#fff" }}>
+            Create
+          </Text>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {loadingFollowers ? (
             <View style={styles.loadingStories}>
-              <ActivityIndicator size="small" color="#3897f0" />
+              <ActivityIndicator size="small" color="#00ff51" />
             </View>
           ) : followersProfiles.length > 0 ? (
             followersProfiles.map((profile) => (
@@ -746,17 +862,29 @@ const onRefresh = async () => {
 
       {/* Title */}
       <Text adjustsFontSizeToFit style={styles.postHeading}>
-        {isSearchOpen ? (searchResults.length > 0 ? `Search Results (${searchResults.length})` : "Search Results") : "Posts"}
+        {isSearchOpen
+          ? searchResults.length > 0
+            ? `Search Results (${searchResults.length})`
+            : "Search Results"
+          : "Posts"}
       </Text>
 
-      {/* Feed */}
+      {/* Feed with Pull-to-Refresh */}
       <FlatList
         data={isSearchOpen ? searchResults : postData}
         keyExtractor={(item) => item.post_id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 5 }}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshPosts}
+            colors={["#3897f0"]}
+            tintColor="#3897f0"
+            title="Pull to refresh"
+            titleColor="#3897f0"
+          />
+        }
         onMomentumScrollBegin={() => {
           onEndReachedCalledDuringMomentum.current = false;
         }}
@@ -767,18 +895,23 @@ const onRefresh = async () => {
           }
         }}
         onEndReachedThreshold={0.3}
-        renderItem={renderPost}
         ListEmptyComponent={
           isSearchOpen && !isSearching && searchQuery.length >= 0 ? (
             <View style={styles.emptySearchContainer}>
               <Icons name="search-outline" size={50} color="#3897f0" />
-              <Text adjustsFontSizeToFit style={styles.emptySearchText}>No posts found</Text>
-              <Text adjustsFontSizeToFit style={styles.emptySearchSubText}>Try searching with different keywords </Text>
+              <Text adjustsFontSizeToFit style={styles.emptySearchText}>
+                No posts found
+              </Text>
+              <Text adjustsFontSizeToFit style={styles.emptySearchSubText}>
+                Try searching with different keywords{" "}
+              </Text>
             </View>
           ) : isSearchOpen && isSearching ? (
             <View style={styles.searchingContainer}>
               <ActivityIndicator size="small" color="#3897f0" />
-              <Text adjustsFontSizeToFit style={styles.searchingText}>Searching...</Text>
+              <Text adjustsFontSizeToFit style={styles.searchingText}>
+                Searching...
+              </Text>
             </View>
           ) : null
         }
@@ -786,17 +919,16 @@ const onRefresh = async () => {
           !isSearchOpen && loadingMore ? (
             <View style={styles.footerLoader}>
               <ActivityIndicator size="small" color="#3897f0" />
-              <Text adjustsFontSizeToFit style={{ color: "#878787", marginLeft: 10 }}>Loading more...</Text>
+              <Text
+                adjustsFontSizeToFit
+                style={{ color: "#878787", marginLeft: 10 }}
+              >
+                Loading more...
+              </Text>
             </View>
-          ) : (
-            <View style={{alignItems:'center',justifyContent:'center'}}>
-              <Text style={{color:'#fff',fontSize:15}}>No post yet</Text>
-            </View>
-          )
+          ) : null
         }
-       
-       
-       
+        renderItem={renderPost}
       />
     </SafeAreaView>
   );
@@ -866,16 +998,16 @@ const styles = StyleSheet.create({
   },
   loadingStories: {
     paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyStories: {
     paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyStoriesText: {
-    color: '#878787',
+    color: "#878787",
     fontSize: 12,
   },
   postHeading: {
@@ -934,6 +1066,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
     marginTop: 10,
+  },
+  titleNoImage: {
+    marginTop: 0, // Less top margin when there's no image
   },
   desc: {
     color: "#9a9a9a",
@@ -998,7 +1133,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 20,
   },
-  // Search styles
   searchContainer: {
     flex: 1,
     flexDirection: "row",

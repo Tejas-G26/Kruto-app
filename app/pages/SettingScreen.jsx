@@ -161,9 +161,9 @@ const SettingScreen = ({ navigation }) => {
 
             {expandedCard === "help" && (
               <View style={styles.expandedContent}>
-                <Text style={styles.contentTitle}>Need Help?</Text>
+                <Text adjustsFontSizeToFit style={styles.contentTitle}>Need Help?</Text>
 
-                <Text style={styles.contentText}>
+                <Text adjustsFontSizeToFit style={styles.contentText}>
                   If you're facing any issues or have questions, our support
                   team is here to help you.
                 </Text>
@@ -174,20 +174,20 @@ const SettingScreen = ({ navigation }) => {
                     onPress={handleEmailSupport}
                   >
                     <Icons name="mail-outline" size={18} color="#fff" />
-                    <Text style={styles.emailButtonText}>Contact Support</Text>
+                    <Text adjustsFontSizeToFit style={styles.emailButtonText}>Contact Support</Text>
                   </TouchableOpacity>
 
-                  <Text style={styles.supportEmailText}>tejasg.tech@gmail.com</Text>
+                  <Text adjustsFontSizeToFit style={styles.supportEmailText}>tejasg.tech@gmail.com</Text>
 
                   <View style={styles.divider} />
 
-                  <Text style={styles.infoText}>
+                  <Text adjustsFontSizeToFit style={styles.infoText}>
                     • Response Time: Within 24 hours
                   </Text>
-                  <Text style={styles.infoText}>
+                  <Text adjustsFontSizeToFit style={styles.infoText}>
                     • Support Hours: Monday – Saturday, 9 AM – 7 PM
                   </Text>
-                  <Text style={styles.infoText}>
+                  <Text  adjustsFontSizeToFitstyle={styles.infoText}>
                     • Please include your device model and app version for
                     faster support
                   </Text>
@@ -217,11 +217,11 @@ const SettingScreen = ({ navigation }) => {
 
             {expandedCard === "about" && (
               <View style={styles.expandedContent}>
-                <Text style={styles.appName}>Kruto – Farming Community</Text>
+                <Text adjustsFontSizeToFit style={styles.appName}>Kruto – Farming Community</Text>
 
-                <Text style={styles.versionText}>Version 1.0.0</Text>
+                <Text adjustsFontSizeToFit style={styles.versionText}>Version 1.0.0</Text>
 
-                <Text style={styles.descriptionText}>
+                <Text adjustsFontSizeToFit style={styles.descriptionText}>
                   Kruto is a smart farming community platform that connects
                   farmers, agriculture experts, and businesses in one place.
                   Share knowledge, post updates, explore opportunities, and grow
@@ -230,39 +230,39 @@ const SettingScreen = ({ navigation }) => {
 
                 <View style={styles.infoRow}>
                   <Icons name="leaf-outline" size={16} color="#fff" />
-                  <Text style={styles.featureText}>
+                  <Text adjustsFontSizeToFit style={styles.featureText}>
                     Connect with farmers & communities
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Icons name="chatbubble-outline" size={16} color="#fff" />
-                  <Text style={styles.featureText}>
+                  <Text adjustsFontSizeToFit style={styles.featureText}>
                     Share posts, ideas, and experiences
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Icons name="storefront-outline" size={16} color="#fff" />
-                  <Text style={styles.featureText}>
+                  <Text adjustsFontSizeToFit style={styles.featureText}>
                     Explore agricultural businesses
                   </Text>
                 </View>
 
                 <View style={styles.divider} />
 
-                <Text style={styles.contactText}>
+                <Text adjustsFontSizeToFit style={styles.contactText}>
                   Built with ❤️ in India by Kruto Team
                 </Text>
 
                 <TouchableOpacity
                   style={styles.websiteLink}
-                  onPress={() => Linking.openURL("https://tejasg.netlify.app")}
+                  onPress={() => Linking.openURL("https://kruto-app.netlify.app")}
                 >
-                  <Text style={styles.linkText}>Visit our website</Text>
+                  <Text adjustsFontSizeToFit style={styles.linkText}>Visit our website</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.copyrightText}>
+                <Text adjustsFontSizeToFit style={styles.copyrightText}>
                   © 2026 Kruto. All rights reserved.
                 </Text>
               </View>

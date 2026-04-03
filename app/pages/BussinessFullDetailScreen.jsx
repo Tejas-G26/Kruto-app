@@ -20,7 +20,10 @@ import { Dimensions } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-const BussinessFullDetailScreen = ({ route }) => {
+const BussinessFullDetailScreen = (props) => {
+  const { route } = props;
+ const  businessId =
+    props?. businessId || route?.params?.businessId;
   const navigation = useNavigation();
   const [comment, setComment] = useState("");
   const [liked, setLiked] = useState(false);
@@ -36,7 +39,7 @@ const BussinessFullDetailScreen = ({ route }) => {
   const flatListRef = useRef(null);
 
   // Get business ID from route params
-  const businessId = route?.params?.businessId;
+ 
   const passedData = route?.params?.data;
 
   // Fetch current user
@@ -128,6 +131,12 @@ const BussinessFullDetailScreen = ({ route }) => {
       }
 
       if (businessId) {
+        if (!businessId && !passedData) {
+  console.log("❌ businessId missing");
+  setLoading(false);
+  return;
+}
+
         const { data, error } = await supabase
           .from("business_listings")
           .select("*")
@@ -504,9 +513,11 @@ const BussinessFullDetailScreen = ({ route }) => {
   };
 
   useEffect(() => {
-    getCurrentUser();
-    fetchListingDetails();
-  }, []);
+  if (!businessId) return;
+
+  getCurrentUser();
+  fetchListingDetails();
+}, [businessId]);
 
   useEffect(() => {
     if (listing && currentUser) {

@@ -1,13 +1,26 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Share, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  Share,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 
-const PostFullDetailScreen = ({ route }) => {
+const PostFullDetailScreen = (props) => {
+  const { route } = props;
+  const post_id = props?.post_id || route?.params?.post_id;
   const navigation = useNavigation();
-  const { post_id } = route.params;
 
   const [post, setPost] = useState(null);
   const [user, setUser] = useState(null);
@@ -28,24 +41,24 @@ const PostFullDetailScreen = ({ route }) => {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   // Format count for likes/comments (K, M)
   const formatCount = (count) => {
     if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
+      return (count / 1000000).toFixed(1) + "M";
     } else if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
+      return (count / 1000).toFixed(1) + "K";
     }
     return count.toString();
   };
@@ -63,6 +76,12 @@ const PostFullDetailScreen = ({ route }) => {
       .select("*")
       .eq("post_id", post_id)
       .single();
+
+    if (!postData) {
+      console.log("❌ post not found");
+      setLoading(false);
+      return;
+    }
 
     setPost(postData);
 
@@ -104,16 +123,18 @@ const PostFullDetailScreen = ({ route }) => {
     // comments with user details and likes count
     const { data: commentData } = await supabase
       .from("comments")
-      .select(`
+      .select(
+        `
         *,
         users(full_name, username, profile_image_url),
         comment_likes(count)
-      `)
+      `,
+      )
       .eq("post_id", post_id)
       .order("created_at", { ascending: false });
 
     // Fetch comment likes for current user
-    const commentIds = commentData?.map(c => c.comment_id) || [];
+    const commentIds = commentData?.map((c) => c.comment_id) || [];
     if (commentIds.length > 0) {
       const { data: userCommentLikes } = await supabase
         .from("comment_likes")
@@ -122,7 +143,7 @@ const PostFullDetailScreen = ({ route }) => {
         .eq("user_id", currentUser.id);
 
       const likedComments = {};
-      userCommentLikes?.forEach(like => {
+      userCommentLikes?.forEach((like) => {
         likedComments[like.comment_id] = true;
       });
       setCommentLikes(likedComments);
@@ -133,8 +154,10 @@ const PostFullDetailScreen = ({ route }) => {
   };
 
   useEffect(() => {
+    if (!post_id) return;
+
     fetchPostDetails();
-  }, []);
+  }, [post_id]);
 
   // 🔥 LIKE POST
   const toggleLike = async () => {
@@ -208,10 +231,12 @@ const PostFullDetailScreen = ({ route }) => {
           created_at: new Date(),
         },
       ])
-      .select(`
+      .select(
+        `
         *,
         users(full_name, username, profile_image_url)
-      `)
+      `,
+      )
       .single();
 
     if (!error && newComment) {
@@ -225,7 +250,7 @@ const PostFullDetailScreen = ({ route }) => {
   const sharePost = async () => {
     const link = `https://kruto-app.netlify.app/post/${post_id}`;
     await Share.share({
-      message: 'Kruto post : ' + link,
+      message: "Kruto post : " + link,
     });
   };
 
@@ -242,40 +267,48 @@ const PostFullDetailScreen = ({ route }) => {
         .eq("comment_id", commentId)
         .eq("user_id", currentUser.id);
 
-      setCommentLikes(prev => ({
+      setCommentLikes((prev) => ({
         ...prev,
-        [commentId]: false
+        [commentId]: false,
       }));
 
-      setComments(prevComments =>
-        prevComments.map(comment =>
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
           comment.comment_id === commentId
-            ? { ...comment, comment_likes: [{ count: (comment.comment_likes?.[0]?.count || 1) - 1 }] }
-            : comment
-        )
+            ? {
+                ...comment,
+                comment_likes: [
+                  { count: (comment.comment_likes?.[0]?.count || 1) - 1 },
+                ],
+              }
+            : comment,
+        ),
       );
     } else {
-      await supabase
-        .from("comment_likes")
-        .insert([
-          {
-            comment_id: commentId,
-            user_id: currentUser.id,
-            created_at: new Date(),
-          },
-        ]);
+      await supabase.from("comment_likes").insert([
+        {
+          comment_id: commentId,
+          user_id: currentUser.id,
+          created_at: new Date(),
+        },
+      ]);
 
-      setCommentLikes(prev => ({
+      setCommentLikes((prev) => ({
         ...prev,
-        [commentId]: true
+        [commentId]: true,
       }));
 
-      setComments(prevComments =>
-        prevComments.map(comment =>
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
           comment.comment_id === commentId
-            ? { ...comment, comment_likes: [{ count: (comment.comment_likes?.[0]?.count || 0) + 1 }] }
-            : comment
-        )
+            ? {
+                ...comment,
+                comment_likes: [
+                  { count: (comment.comment_likes?.[0]?.count || 0) + 1 },
+                ],
+              }
+            : comment,
+        ),
       );
     }
   };
@@ -304,28 +337,46 @@ const PostFullDetailScreen = ({ route }) => {
 
     return (
       <View style={styles.commentContainer}>
-        <Image 
-          style={styles.commentProfileImg} 
-          source={{ uri: item.users?.profile_image_url || 'https://via.placeholder.com/40' }} 
+        <Image
+          style={styles.commentProfileImg}
+          source={{
+            uri:
+              item.users?.profile_image_url || "https://via.placeholder.com/40",
+          }}
         />
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
-            <Text adjustsFontSizeToFit style={styles.commentName}>{item.users?.full_name || 'User'}</Text>
-            <Text adjustsFontSizeToFit style={styles.commentUsername}>@{item.users?.username || 'user'}</Text>
-            <Text adjustsFontSizeToFit style={styles.commentTime}>• {formatDate(item.created_at)}</Text>
+            <Text adjustsFontSizeToFit style={styles.commentName}>
+              {item.users?.full_name || "User"}
+            </Text>
+            <Text adjustsFontSizeToFit style={styles.commentUsername}>
+              @{item.users?.username || "user"}
+            </Text>
+            <Text adjustsFontSizeToFit style={styles.commentTime}>
+              • {formatDate(item.created_at)}
+            </Text>
           </View>
-          <Text adjustsFontSizeToFit style={styles.commentText}>{item.comment_text}</Text>
+          <Text adjustsFontSizeToFit style={styles.commentText}>
+            {item.comment_text}
+          </Text>
           <View style={styles.commentActions}>
-            <TouchableOpacity 
-              onPress={() => toggleCommentLike(item.comment_id, isLiked)} 
-              style={styles.commentActionBtn}>
-              <Icons 
-                name={isLiked ? "heart" : "heart-outline"} 
-                size={14} 
-                color={isLiked ? "#ff6b6b" : "#878787"} 
+            <TouchableOpacity
+              onPress={() => toggleCommentLike(item.comment_id, isLiked)}
+              style={styles.commentActionBtn}
+            >
+              <Icons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={14}
+                color={isLiked ? "#ff6b6b" : "#878787"}
               />
               {likeCount > 0 && (
-                <Text adjustsFontSizeToFit style={[styles.commentActionText, isLiked && styles.likedCommentText]}>
+                <Text
+                  adjustsFontSizeToFit
+                  style={[
+                    styles.commentActionText,
+                    isLiked && styles.likedCommentText,
+                  ]}
+                >
                   {formatCount(likeCount)}
                 </Text>
               )}
@@ -338,95 +389,122 @@ const PostFullDetailScreen = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
-        
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+            >
               <Icons name="close" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text adjustsFontSizeToFit style={styles.headerTitle}>Post</Text>
+            <Text adjustsFontSizeToFit style={styles.headerTitle}>
+              Post
+            </Text>
             <View style={styles.placeholder} />
           </View>
 
-          <ScrollView 
+          <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled">
-            
+            keyboardShouldPersistTaps="handled"
+          >
             {/* Post Card */}
             <View style={styles.postCard}>
               {/* Profile Header */}
               <View style={styles.profileHeader}>
-                <TouchableOpacity 
-                 onPress={() => {
-                navigation.navigate("oup", {
-              user_id: user.user_id,
-                  });
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate("oup", {
+                      user_id: user.user_id,
+                    });
                   }}
-                style={styles.profileSection}>
-                  <Image style={styles.profileImg} source={{ uri: user.profile_image_url }} />
+                  style={styles.profileSection}
+                >
+                  <Image
+                    style={styles.profileImg}
+                    source={{ uri: user.profile_image_url }}
+                  />
                   <View style={styles.profileTextSection}>
-                    <Text adjustsFontSizeToFit style={styles.username}>{user.full_name}</Text>
-                    <Text adjustsFontSizeToFit style={styles.userHandle}>@{user.username}</Text>
+                    <Text adjustsFontSizeToFit style={styles.username}>
+                      {user.full_name}
+                    </Text>
+                    <Text adjustsFontSizeToFit style={styles.userHandle}>
+                      @{user.username}
+                    </Text>
                   </View>
                 </TouchableOpacity>
-                
               </View>
 
               {/* Post Image */}
-              <Image style={styles.postImage} source={{ uri: post.image_url }} />
+              {post?.image_url?.trim() ? (
+                <Image
+                  style={styles.postImage}
+                  source={{ uri: post.image_url }}
+                />
+              ) : null}
 
               {/* Title */}
-              <Text adjustsFontSizeToFit style={styles.title}>{post.title}</Text>
+              <Text adjustsFontSizeToFit style={styles.title}>
+                {post.title}
+              </Text>
 
               {/* Description */}
-              <Text adjustsFontSizeToFit style={styles.desc}>{post.description}</Text>
+              <Text adjustsFontSizeToFit style={styles.desc}>
+                {post.description}
+              </Text>
 
               {/* Engagement Stats */}
               <View style={styles.engagementStats}>
                 <View style={styles.statItem}>
-                  <Icons 
-                    name={liked ? "heart" : "heart-outline"} 
-                    size={16} 
-                    color={liked ? "#ff6b6b" : "#878787"} 
+                  <Icons
+                    name={liked ? "heart" : "heart-outline"}
+                    size={16}
+                    color={liked ? "#ff6b6b" : "#878787"}
                   />
-                  <Text adjustsFontSizeToFit style={[styles.statText, liked && styles.likedStatText]}>
+                  <Text
+                    adjustsFontSizeToFit
+                    style={[styles.statText, liked && styles.likedStatText]}
+                  >
                     {formatCount(likesCount)} likes
                   </Text>
                 </View>
-                
+
                 <View style={styles.statDivider} />
-                
+
                 <View style={styles.statItem}>
                   <Icons name="chatbubble-outline" size={16} color="#878787" />
                   <Text adjustsFontSizeToFit style={styles.statText}>
                     {formatCount(comments.length)} comments
                   </Text>
                 </View>
-                
+
                 <View style={styles.statDivider} />
-                
+
                 <View style={styles.statItem}>
                   <Icons name="time-outline" size={16} color="#878787" />
-                  <Text adjustsFontSizeToFit style={styles.statText}>{formatDate(post.created_at)}</Text>
+                  <Text adjustsFontSizeToFit style={styles.statText}>
+                    {formatDate(post.created_at)}
+                  </Text>
                 </View>
               </View>
 
               {/* Action Buttons */}
               <View style={styles.actionRow}>
                 <View style={styles.iconRow}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={toggleLike}
-                    style={[styles.iconBtn, liked && styles.likedBtn]}>
-                    <Icons 
-                      name={liked ? "heart" : "heart-outline"} 
-                      size={22} 
-                      color={liked ? "#ff6b6b" : "#fff"} 
+                    style={[styles.iconBtn, liked && styles.likedBtn]}
+                  >
+                    <Icons
+                      name={liked ? "heart" : "heart-outline"}
+                      size={22}
+                      color={liked ? "#ff6b6b" : "#fff"}
                     />
                   </TouchableOpacity>
 
@@ -435,13 +513,14 @@ const PostFullDetailScreen = ({ route }) => {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={toggleSave}
-                  style={[styles.iconBtn, saved && styles.savedBtn]}>
-                  <Icons 
-                    name={saved ? "bookmark" : "bookmark-outline"} 
-                    size={22} 
-                    color={saved ? "#ffd700" : "#fff"} 
+                  style={[styles.iconBtn, saved && styles.savedBtn]}
+                >
+                  <Icons
+                    name={saved ? "bookmark" : "bookmark-outline"}
+                    size={22}
+                    color={saved ? "#ffd700" : "#fff"}
                   />
                 </TouchableOpacity>
               </View>
@@ -449,8 +528,12 @@ const PostFullDetailScreen = ({ route }) => {
 
             {/* Comments Section Header */}
             <View style={styles.commentsHeader}>
-              <Text adjustsFontSizeToFit style={styles.commentsTitle}>Comments</Text>
-              <Text adjustsFontSizeToFit style={styles.commentCount}>{formatCount(comments.length)}</Text>
+              <Text adjustsFontSizeToFit style={styles.commentsTitle}>
+                Comments
+              </Text>
+              <Text adjustsFontSizeToFit style={styles.commentCount}>
+                {formatCount(comments.length)}
+              </Text>
             </View>
 
             {/* Comments List */}
@@ -462,8 +545,12 @@ const PostFullDetailScreen = ({ route }) => {
               ) : (
                 <View style={styles.noCommentsContainer}>
                   <Icons name="chatbubble-outline" size={48} color="#2f2f2f" />
-                  <Text adjustsFontSizeToFit style={styles.noCommentsText}>No comments yet</Text>
-                  <Text adjustsFontSizeToFit style={styles.noCommentsSubtext}>Be the first to share your thoughts!</Text>
+                  <Text adjustsFontSizeToFit style={styles.noCommentsText}>
+                    No comments yet
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.noCommentsSubtext}>
+                    Be the first to share your thoughts!
+                  </Text>
                 </View>
               )}
             </View>
@@ -474,9 +561,12 @@ const PostFullDetailScreen = ({ route }) => {
 
           {/* Comment Input */}
           <View style={styles.commentInputContainer}>
-            <Image 
-              style={styles.inputProfileImg} 
-              source={{ uri: user?.profile_image_url || 'https://via.placeholder.com/40' }} 
+            <Image
+              style={styles.inputProfileImg}
+              source={{
+                uri:
+                  user?.profile_image_url || "https://via.placeholder.com/40",
+              }}
             />
             <TextInput
               style={styles.commentInput}
@@ -584,7 +674,7 @@ const styles = StyleSheet.create({
   },
   followBtn: {
     borderWidth: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 6,

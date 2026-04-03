@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator,Share } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, Share } from "react-native";
 import React, { useState, useEffect } from "react";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "@react-navigation/native";
@@ -13,7 +13,7 @@ const PostFullDetailCard = ({
   des, 
   time, 
   post_id, 
-  user_id,  // This is the post creator's user_id
+  user_id,
   initialLikesCount = 0,
   initialCommentsCount = 0,
   initialIsLiked = false,
@@ -61,14 +61,13 @@ const PostFullDetailCard = ({
     return count.toString();
   };
 
-   const sharePost = async (post_id) => {
-      const link = `https://kruto-app.netlify.app/post/${post_id}`;
-    
-      await Share.share({
-        message:'Kruto post : '+ link,
-      });
-    };
+  const sharePost = async (post_id) => {
+    const link = `https://kruto-app.netlify.app/post/${post_id}`;
   
+    await Share.share({
+      message:'Kruto post : '+ link,
+    });
+  };
 
   // Get current user on mount
   useEffect(() => {
@@ -257,6 +256,9 @@ const PostFullDetailCard = ({
     }
   };
 
+  // Check if image exists
+  const hasImage = image && image.uri && image.uri.trim() !== "";
+
   // Debug log to check ownership
   useEffect(() => {
     if (currentUser && user_id) {
@@ -301,21 +303,23 @@ const PostFullDetailCard = ({
           )}
         </View>
 
-        {/* Post Image */}
-        <Image 
-          style={styles.postImage} 
-          source={image} 
-          resizeMode="cover"
-        />
+        {/* Post Image - Only show if image exists */}
+        {hasImage && (
+          <Image 
+            style={styles.postImage} 
+            source={image} 
+            resizeMode="cover"
+          />
+        )}
 
-        {/* Title */}
+        {/* Title - Always show */}
         {title && (
-          <Text adjustsFontSizeToFit style={styles.title}>
+          <Text adjustsFontSizeToFit style={[styles.title, !hasImage && styles.titleNoImage]}>
             {title}
           </Text>
         )}
 
-        {/* Description */}
+        {/* Description - Always show */}
         {des && (
           <Text adjustsFontSizeToFit numberOfLines={2} style={styles.desc}>
             {des}
@@ -498,6 +502,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
     marginTop: 12,
+  },
+
+  titleNoImage: {
+    marginTop: 0, // Less top margin when there's no image
   },
 
   desc: {

@@ -16,12 +16,15 @@ import Icons from "@react-native-vector-icons/ionicons";
 import { supabase } from "@/lib/supabase";
 import PostFullDetailCard from "../component/PostFullDetailCard";
 import { RefreshControl } from "react-native";
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 const isSmallDevice = width < 375;
 
-const OtherUserProfileScreen = ({ route, navigation }) => {
-  const { user_id } = route.params;
+const OtherUserProfileScreen = (props) => {
+  const { navigation, route } = props;
+ const user_id =
+    props?.user_id || route?.params?.user_id;
 
   const [currentUser, setCurrentUser] = useState(null);
   const [user, setUser] = useState(null);
@@ -157,9 +160,11 @@ setPosts(formattedPosts);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+useEffect(() => {
+  if (!user_id) return;
+
+  fetchProfile();
+}, [user_id]);
 
   // Add this function in your OtherUserProfileScreen component (before the return statement)
   const handlePostDelete = (deletedPostId) => {
