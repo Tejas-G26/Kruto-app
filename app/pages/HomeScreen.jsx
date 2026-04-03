@@ -177,7 +177,7 @@ const HomeScreen = ({ navigation }) => {
           username: user.username,
           image: user.profile_image_url
             ? { uri: user.profile_image_url }
-            : require("../../assets/images/default-avatar.jpg"),
+            :{ uri: "https://iili.io/BoNMnj4.png" },
           color: "#3897f0",
           bio: user.bio || "",
         }));

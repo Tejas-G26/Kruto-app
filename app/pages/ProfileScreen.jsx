@@ -218,7 +218,7 @@ setPosts(formattedPosts);
               style={styles.avatar}
               source={{ uri: user?.profile_image_url ||  "https://iili.io/BoNMnj4.md.png" }}
               resizeMode="cover"
-              defaultSource={require("../../assets/images/default-avatar.png")}
+              
             />
             <View style={styles.verifiedBadge}>
               <Icons name="checkmark-circle" size={20} color="#3897f0" />

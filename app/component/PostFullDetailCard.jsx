@@ -290,7 +290,7 @@ const PostFullDetailCard = ({
   source={
     proimg && proimg.uri && proimg.uri.trim() !== ""
       ? { uri: proimg.uri }
-      : require("../../assets/images/default-avatar.png") // your default image
+      : { uri: "https://iili.io/BoNMnj4.png" }  // your default image
   }
 />
             <View style={styles.profileTextSection}>

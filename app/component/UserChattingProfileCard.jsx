@@ -14,7 +14,7 @@ const UserChattingProfileCard = ({ user }) => {
   const userData = user || {
     name: "Rahul D.",
     username: "rahul_d26",
-    avatar: require("../../assets/images/default-avatar.png"),
+    avatar: "https://iili.io/BoNMnj4.md.png",
     isFollowing: false,
     mutualFriends: 5
   };

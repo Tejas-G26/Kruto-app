@@ -7,7 +7,9 @@ import { supabase } from '../../lib/supabase';
 const { width } = Dimensions.get("window");
 
 // Use existing images from your project
-const DEFAULT_PRODUCT_IMAGE = require("../../assets/images/default-avatar.png");
+const DEFAULT_PRODUCT_IMAGE =  {
+  uri: "https://iili.io/BoNMnj4.png",
+};
 
 const BussinessListedScreen = ({ navigation }) => {
   const [listings, setListings] = useState([]);

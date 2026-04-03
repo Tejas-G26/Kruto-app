@@ -418,7 +418,6 @@ const getLastSeenText = (user) => {
               uri: item.user?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
             }}
             style={styles.avatar}
-            defaultSource={require('../../assets/images/default-avatar.png')}
             onError={(error) => console.log("Image loading error:", error)}
           />
           {isOnline(item.user) && (

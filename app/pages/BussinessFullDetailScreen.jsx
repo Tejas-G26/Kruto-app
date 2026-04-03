@@ -491,14 +491,12 @@ const BussinessFullDetailScreen = (props) => {
     }
 
     return (
-      <Image
-        style={styles.postImage}
-        source={{ uri: item }}
-        onError={(error) =>
-          console.log("Image load error:", item, error.nativeEvent.error)
-        }
-        defaultSource={require("../../assets/images/default-avatar.png")}
-      />
+     <Image
+  style={styles.postImage}
+  source={{
+    uri: item || "https://iili.io/BoNMnj4.png",
+  }}
+/>
     );
   };
 
@@ -673,7 +671,7 @@ const BussinessFullDetailScreen = (props) => {
                   source={
                     userData?.profile_image_url
                       ? { uri: userData.profile_image_url }
-                      : require("../../assets/images/default-avatar.png")
+                      : { uri: "https://iili.io/BoNMnj4.png" }
                   }
                 />
                 <View style={styles.profileTextSection}>

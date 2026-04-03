@@ -474,7 +474,7 @@ const renderItem = ({ item, index }) => {
               <Image
                 source={{ uri: receiver.profile_image_url || 'https://iili.io/BoNMnj4.md.png' }}
                 style={styles.avatar}
-                defaultSource={require('../../assets/images/default-avatar.png')}
+      
               />
               <View style={styles.headerUserInfo}>
                 <Text adjustsFontSizeToFit style={styles.name}>{receiver.full_name}</Text>
