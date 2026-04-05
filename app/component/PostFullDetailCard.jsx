@@ -1,24 +1,34 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, Share } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  ActivityIndicator,
+  Share,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "@/lib/supabase";
 
-const PostFullDetailCard = ({ 
-  image, 
-  proimg, 
-  name, 
-  username, 
-  title, 
-  des, 
-  time, 
-  post_id, 
+const PostFullDetailCard = ({
+  image,
+  proimg,
+  name,
+  username,
+  title,
+  des,
+  time,
+  post_id,
   user_id,
   initialLikesCount = 0,
   initialCommentsCount = 0,
   initialIsLiked = false,
   onLikeUpdate,
-  onPostDelete
+  onPostDelete,
 }) => {
   const navigation = useNavigation();
   const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -30,49 +40,52 @@ const PostFullDetailCard = ({
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const d = new Date(dateString);
+    const d = new Date(dateString.replace(" ", "T") + "Z");
+
     const now = new Date();
     const diffMs = now - d;
+
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   // Format count for likes/comments (K, M)
   const formatCount = (count) => {
-    if (!count) return '0';
+    if (!count) return "0";
     if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
+      return (count / 1000000).toFixed(1) + "M";
     } else if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
+      return (count / 1000).toFixed(1) + "K";
     }
     return count.toString();
   };
 
   const sharePost = async (post_id) => {
     const link = `https://kruto-app.netlify.app/post/${post_id}`;
-  
+
     await Share.share({
-      message:'Kruto post : '+ link,
+      message: "Kruto post : " + link,
     });
   };
 
   // Get current user on mount
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setCurrentUser(user);
     };
     getCurrentUser();
@@ -87,13 +100,13 @@ const PostFullDetailCard = ({
   // Toggle like with proper error handling
   const toggleLike = async () => {
     if (!currentUser) {
-      Alert.alert('Error', 'Please login to like posts');
+      Alert.alert("Error", "Please login to like posts");
       return;
     }
 
     if (!post_id) {
-      console.error('Cannot toggle like: post_id is missing or null');
-      Alert.alert('Error', 'Unable to like this post. Post ID is missing.');
+      console.error("Cannot toggle like: post_id is missing or null");
+      Alert.alert("Error", "Unable to like this post. Post ID is missing.");
       return;
     }
 
@@ -111,30 +124,28 @@ const PostFullDetailCard = ({
     try {
       if (newLikedStatus) {
         // Insert like
-        const { error } = await supabase
-          .from("post_likes")
-          .insert([
-            {
-              post_id: post_id,
-              user_id: currentUser.id,
-              created_at: new Date().toISOString(),
-            },
-          ]);
+        const { error } = await supabase.from("post_likes").insert([
+          {
+            post_id: post_id,
+            user_id: currentUser.id,
+            created_at: new Date().toISOString(),
+          },
+        ]);
 
         if (error) {
-          console.error('Supabase insert error:', error);
+          console.error("Supabase insert error:", error);
           // Rollback optimistic update
           setIsLiked(!newLikedStatus);
           setLikesCount(likesCount);
-          
+
           if (onLikeUpdate) {
             onLikeUpdate(post_id, !newLikedStatus, likesCount);
           }
-          
-          if (error.code === '23505') {
-            Alert.alert('Already Liked', 'You have already liked this post');
+
+          if (error.code === "23505") {
+            Alert.alert("Already Liked", "You have already liked this post");
           } else {
-            Alert.alert('Error', 'Failed to like post. Please try again.');
+            Alert.alert("Error", "Failed to like post. Please try again.");
           }
         }
       } else {
@@ -146,85 +157,63 @@ const PostFullDetailCard = ({
           .eq("user_id", currentUser.id);
 
         if (error) {
-          console.error('Supabase delete error:', error);
+          console.error("Supabase delete error:", error);
           // Rollback optimistic update
           setIsLiked(!newLikedStatus);
           setLikesCount(likesCount);
-          
+
           if (onLikeUpdate) {
             onLikeUpdate(post_id, !newLikedStatus, likesCount);
           }
-          
-          Alert.alert('Error', 'Failed to unlike post. Please try again.');
+
+          Alert.alert("Error", "Failed to unlike post. Please try again.");
         }
       }
     } catch (error) {
-      console.error('Unexpected error in toggleLike:', error);
+      console.error("Unexpected error in toggleLike:", error);
       // Rollback optimistic update
       setIsLiked(!newLikedStatus);
       setLikesCount(likesCount);
-      
+
       if (onLikeUpdate) {
         onLikeUpdate(post_id, !newLikedStatus, likesCount);
       }
-      
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     }
   };
 
   // Handle post deletion
   const handleDeletePost = async () => {
     if (!post_id) {
-      Alert.alert('Error', 'Cannot delete post: Post ID is missing');
+      Alert.alert("Error", "Post ID is missing");
       return;
     }
 
     setIsDeleting(true);
-    
+
     try {
-      // First, delete all likes associated with this post
-      const { error: likesError } = await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", post_id);
-      
-      if (likesError) {
-        console.error('Error deleting likes:', likesError);
-      }
-
-      // Delete all comments associated with this post
-      const { error: commentsError } = await supabase
-        .from("comments")
-        .delete()
-        .eq("post_id", post_id);
-      
-      if (commentsError) {
-        console.error('Error deleting comments:', commentsError);
-      }
-
-      // Finally, delete the post
-      const { error: postError } = await supabase
+      // 🔥 Only delete post (CASCADE handles everything else)
+      const { error } = await supabase
         .from("posts")
         .delete()
         .eq("post_id", post_id);
 
-      if (postError) {
-        console.error('Error deleting post:', postError);
-        Alert.alert('Error', 'Failed to delete post. Please try again.');
+      if (error) {
+        console.error("Delete error:", error);
+        Alert.alert("Error", "Failed to delete post");
         return;
       }
 
-      Alert.alert('Success', 'Post deleted successfully');
-      
-      // Call the onPostDelete callback to update parent component
+      // ✅ Update UI
       if (onPostDelete) {
         onPostDelete(post_id);
       }
-      
+
       setShowDeleteModal(false);
-    } catch (error) {
-      console.error('Unexpected error in deletePost:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      Alert.alert("Error", "Something went wrong");
     } finally {
       setIsDeleting(false);
     }
@@ -233,19 +222,19 @@ const PostFullDetailCard = ({
   // Navigate to full post view
   const handlePostPress = () => {
     if (!post_id) {
-      console.error('Cannot navigate: post_id is missing');
+      console.error("Cannot navigate: post_id is missing");
       return;
     }
-    navigation.navigate('pfv', { 
+    navigation.navigate("PostDetails", {
       post_id: post_id,
-      user_id: user_id
+      user_id: user_id,
     });
   };
 
   // Navigate to user profile
   const handleProfilePress = () => {
     if (user_id) {
-      navigation.navigate('oup', { user_id: user_id });
+      navigation.navigate("OtherUserProfile", { user_id: user_id });
     }
   };
 
@@ -262,66 +251,68 @@ const PostFullDetailCard = ({
   // Debug log to check ownership
   useEffect(() => {
     if (currentUser && user_id) {
-      console.log('Post ownership check:', {
+      console.log("Post ownership check:", {
         post_id: post_id,
         post_owner_id: user_id,
         current_user_id: currentUser.id,
-        isOwner: currentUser.id === user_id
+        isOwner: currentUser.id === user_id,
       });
     }
   }, [currentUser, user_id, post_id]);
 
   return (
     <>
-      <TouchableOpacity 
-        activeOpacity={0.9} 
+      <TouchableOpacity
+        activeOpacity={0.9}
         onPress={handlePostPress}
         style={styles.card}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileSection}
             onPress={handleProfilePress}
             activeOpacity={0.7}
           >
-           <Image
-  style={styles.profileImg}
-  source={
-    proimg && proimg.uri && proimg.uri.trim() !== ""
-      ? { uri: proimg.uri }
-      : { uri: "https://iili.io/BoNMnj4.png" }  // your default image
-  }
-/>
+            <Image
+              style={styles.profileImg}
+              source={
+                proimg && proimg.uri && proimg.uri.trim() !== ""
+                  ? { uri: proimg.uri }
+                  : { uri: "https://iili.io/BoNMnj4.png" } // your default image
+              }
+            />
             <View style={styles.profileTextSection}>
-              <Text adjustsFontSizeToFit style={styles.username}>{name}</Text>
-              {username && <Text adjustsFontSizeToFit style={styles.userHandle}>@{username}</Text>}
+              <Text adjustsFontSizeToFit style={styles.username}>
+                {name}
+              </Text>
+              {username && (
+                <Text adjustsFontSizeToFit style={styles.userHandle}>
+                  @{username}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
 
           {/* Only show menu button if user owns the post */}
           {isPostOwner() && (
-            <TouchableOpacity 
-              style={styles.menuBtn}
-              onPress={handleMenuPress}
-            >
-              <Icons name='ellipsis-vertical' size={20} color={'#fff'} />
+            <TouchableOpacity style={styles.menuBtn} onPress={handleMenuPress}>
+              <Icons name="ellipsis-vertical" size={20} color={"#fff"} />
             </TouchableOpacity>
           )}
         </View>
 
         {/* Post Image - Only show if image exists */}
         {hasImage && (
-          <Image 
-            style={styles.postImage} 
-            source={image} 
-            resizeMode="cover"
-          />
+          <Image style={styles.postImage} source={image} resizeMode="cover" />
         )}
 
         {/* Title - Always show */}
         {title && (
-          <Text numberOfLines={1} style={[styles.title, !hasImage && styles.titleNoImage]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.title, !hasImage && styles.titleNoImage]}
+          >
             {title}
           </Text>
         )}
@@ -336,30 +327,35 @@ const PostFullDetailCard = ({
         {/* Engagement Stats */}
         <View style={styles.engagementStats}>
           <View style={styles.statItem}>
-            <Icons 
-              name={isLiked ? "heart" : "heart-outline"} 
-              size={14} 
-              color={isLiked ? "#ff6b6b" : "#878787"} 
+            <Icons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={14}
+              color={isLiked ? "#ff6b6b" : "#878787"}
             />
-            <Text adjustsFontSizeToFit style={[styles.statText, isLiked && styles.likedStatText]}>
+            <Text
+              adjustsFontSizeToFit
+              style={[styles.statText, isLiked && styles.likedStatText]}
+            >
               {formatCount(likesCount)} likes
             </Text>
           </View>
-          
+
           <View style={styles.statDivider} />
-          
+
           <View style={styles.statItem}>
             <Icons name="chatbubble-outline" size={14} color="#878787" />
             <Text adjustsFontSizeToFit style={styles.statText}>
               {formatCount(commentsCount)} comments
             </Text>
           </View>
-          
+
           <View style={styles.statDivider} />
-          
+
           <View style={styles.statItem}>
             <Icons name="time-outline" size={14} color="#878787" />
-            <Text adjustsFontSizeToFit style={styles.statText}>{formatDate(time)}</Text>
+            <Text adjustsFontSizeToFit style={styles.statText}>
+              {formatDate(time)}
+            </Text>
           </View>
         </View>
 
@@ -368,23 +364,23 @@ const PostFullDetailCard = ({
           <View style={styles.iconRow}>
             <TouchableOpacity
               onPress={toggleLike}
-              style={[styles.iconBtn, isLiked && styles.likedBtn]}>
-              <Icons 
-                name={isLiked ? "heart" : "heart-outline"} 
-                size={20} 
-                color={isLiked ? "#ff6b6b" : "#fff"} 
+              style={[styles.iconBtn, isLiked && styles.likedBtn]}
+            >
+              <Icons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={20}
+                color={isLiked ? "#ff6b6b" : "#fff"}
               />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={handlePostPress}
-              style={styles.iconBtn}>
+            <TouchableOpacity onPress={handlePostPress} style={styles.iconBtn}>
               <Icons name="chatbubble-outline" size={20} color="#fff" />
             </TouchableOpacity>
 
-            <TouchableOpacity 
-            onPress={()=>sharePost(post_id)}
-            style={styles.iconBtn}>
+            <TouchableOpacity
+              onPress={() => sharePost(post_id)}
+              style={styles.iconBtn}
+            >
               <Icons name="share-social-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -403,21 +399,26 @@ const PostFullDetailCard = ({
             <View style={styles.modalIcon}>
               <Icons name="trash-outline" size={50} color="#ff6b6b" />
             </View>
-            
-            <Text adjustsFontSizeToFit style={styles.modalTitle}>Delete Post</Text>
-            <Text adjustsFontSizeToFit style={styles.modalMessage}>
-              Are you sure you want to delete this post? This action cannot be undone.
+
+            <Text adjustsFontSizeToFit style={styles.modalTitle}>
+              Delete Post
             </Text>
-            
+            <Text adjustsFontSizeToFit style={styles.modalMessage}>
+              Are you sure you want to delete this post? This action cannot be
+              undone.
+            </Text>
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowDeleteModal(false)}
                 disabled={isDeleting}
               >
-                <Text adjustsFontSizeToFit style={styles.cancelButtonText}>Cancel</Text>
+                <Text adjustsFontSizeToFit style={styles.cancelButtonText}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.deleteButton]}
                 onPress={handleDeletePost}
@@ -426,7 +427,9 @@ const PostFullDetailCard = ({
                 {isDeleting ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text adjustsFontSizeToFit style={styles.deleteButtonText}>Delete</Text>
+                  <Text adjustsFontSizeToFit style={styles.deleteButtonText}>
+                    Delete
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>

@@ -41,10 +41,10 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const onRefresh = async () => {
-  setRefreshing(true);
-  await fetchProfile();
-  setRefreshing(false);
-};
+    setRefreshing(true);
+    await fetchProfile();
+    setRefreshing(false);
+  };
 
   // 🔥 FETCH DATA
   const fetchProfile = async () => {
@@ -62,28 +62,30 @@ const ProfileScreen = ({ navigation }) => {
 
     // posts with likes & comments count
     // ✅ FIXED POSTS FETCH
-const { data: postData } = await supabase
-  .from("posts")
-  .select(`
+    const { data: postData } = await supabase
+      .from("posts")
+      .select(
+        `
     *,
     post_likes!left(user_id),
     comments(count)
-  `)
-  .eq("user_id", currentUser.id)
-  .order("created_at", { ascending: false });
+  `,
+      )
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false });
 
-const formattedPosts = postData.map(post => {
-  const likes = post.post_likes || [];
+    const formattedPosts = postData.map((post) => {
+      const likes = post.post_likes || [];
 
-  return {
-    ...post,
-    likes_count: likes.length,
-    comments_count: post.comments?.[0]?.count || 0,
-    user_has_liked: likes.some(like => like.user_id === currentUser.id)
-  };
-});
+      return {
+        ...post,
+        likes_count: likes.length,
+        comments_count: post.comments?.[0]?.count || 0,
+        user_has_liked: likes.some((like) => like.user_id === currentUser.id),
+      };
+    });
 
-setPosts(formattedPosts);
+    setPosts(formattedPosts);
 
     // followers
     const { count: followersCount } = await supabase
@@ -146,7 +148,7 @@ setPosts(formattedPosts);
     );
 
     // Optional: Show a success message
-    Alert.alert("Success", "Post deleted successfully");
+    // Alert.alert("Success", "Post deleted successfully");
   };
 
   useEffect(() => {
@@ -190,7 +192,7 @@ setPosts(formattedPosts);
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("S")}
+              onPress={() => navigation.navigate("Settings")}
               style={styles.iconCircle}
             >
               <Icons name="settings" size={20} color="#fff" />
@@ -199,26 +201,28 @@ setPosts(formattedPosts);
         </View>
       </View>
 
-     <ScrollView
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={styles.scrollContent}
-  refreshControl={
-    <RefreshControl
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      colors={["#3897f0"]}
-      tintColor="#3897f0"
-    />
-  }
->
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3897f0"]}
+            tintColor="#3897f0"
+          />
+        }
+      >
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
             <Image
               style={styles.avatar}
-              source={{ uri: user?.profile_image_url ||  "https://iili.io/BoNMnj4.md.png" }}
+              source={{
+                uri:
+                  user?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
+              }}
               resizeMode="cover"
-              
             />
             <View style={styles.verifiedBadge}>
               <Icons name="checkmark-circle" size={20} color="#3897f0" />

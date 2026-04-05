@@ -29,7 +29,18 @@
           "data": [
             {
               "scheme": "https",
-              "host": "kruto-app.netlify.app"
+              "host": "kruto-app.netlify.app",
+              "pathPrefix": "/post"
+            },
+             {
+              "scheme": "https",
+              "host": "kruto-app.netlify.app",
+              "pathPrefix": "/profile"
+            },
+             {
+              "scheme": "https",
+              "host": "kruto-app.netlify.app",
+              "pathPrefix": "/business"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

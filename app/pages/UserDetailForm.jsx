@@ -14,8 +14,8 @@ import React, { useState, useEffect } from "react";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from "expo-image-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { supabase } from "@/lib/supabase";
 
 const UserDetailForm = () => {
@@ -27,24 +27,30 @@ const UserDetailForm = () => {
   const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    bio: '',
-    location: '',
+    name: "",
+    username: "",
+    bio: "",
+    location: "",
     dateOfBirth: new Date(),
-    phone: '',
-    email: '',
-    website: '',
-    occupation: '',
-    gender: '',
-    relationshipStatus: '',
+    phone: "",
+    email: "",
+    website: "",
+    occupation: "",
+    gender: "",
+    relationshipStatus: "",
   });
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Gender options
-  const genderOptions = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
-  const relationshipOptions = ['Single', 'In a relationship', 'Married', 'Divorced', 'Prefer not to say'];
+  const genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"];
+  const relationshipOptions = [
+    "Single",
+    "In a relationship",
+    "Married",
+    "Divorced",
+    "Prefer not to say",
+  ];
 
   // 🔥 LOAD USER DATA
   useEffect(() => {
@@ -88,7 +94,7 @@ const UserDetailForm = () => {
   // 🔥 IMAGE PICKER
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:["images"],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -110,23 +116,21 @@ const UserDetailForm = () => {
 
     const { error } = await supabase.storage
       .from("profile")
-      .upload(fileName, ArrayBuffer,{
-        contentType:'image/jpeg',
+      .upload(fileName, ArrayBuffer, {
+        contentType: "image/jpeg",
       });
 
     if (error) throw error;
 
-    const { data } = supabase.storage
-      .from("profile")
-      .getPublicUrl(fileName);
-    
+    const { data } = supabase.storage.from("profile").getPublicUrl(fileName);
+
     setUploading(false);
     return data.publicUrl;
   };
 
   // 🔥 DATE PICKER
   const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(Platform.OS === 'ios');
+    setShowDatePicker(Platform.OS === "ios");
     if (selectedDate) {
       setFormData({ ...formData, dateOfBirth: selectedDate });
     }
@@ -175,15 +179,22 @@ const UserDetailForm = () => {
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text adjustsFontSizeToFit style={styles.stepTitle}>Basic Information</Text>
-        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Tell us about yourself</Text>
+        <Text adjustsFontSizeToFit style={styles.stepTitle}>
+          Basic Information
+        </Text>
+        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+          Tell us about yourself
+        </Text>
       </View>
 
       <View style={styles.imageUploadContainer}>
         <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
           {profileImage ? (
             <View style={styles.profileImageWrapper}>
-              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.profileImage}
+              />
               <View style={styles.imageEditBadge}>
                 <Icons name="camera" size={16} color="#fff" />
               </View>
@@ -191,7 +202,9 @@ const UserDetailForm = () => {
           ) : (
             <View style={styles.imagePlaceholder}>
               <Icons name="camera-outline" size={48} color="#3897f0" />
-              <Text adjustsFontSizeToFit style={styles.imagePlaceholderText}>Add Profile Photo</Text>
+              <Text adjustsFontSizeToFit style={styles.imagePlaceholderText}>
+                Add Profile Photo
+              </Text>
             </View>
           )}
         </TouchableOpacity>
@@ -203,9 +216,16 @@ const UserDetailForm = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Full Name</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Full Name
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="person-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="person-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter your full name"
@@ -217,27 +237,41 @@ const UserDetailForm = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Username</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Username
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="at-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="at-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Choose a username"
             placeholderTextColor="#878787"
             value={formData.username}
-           editable={false}
+            editable={false}
             autoCapitalize="none"
           />
         </View>
-        <Text style={{color:'#878787', fontSize:12}}>
+        <Text style={{ color: "#878787", fontSize: 12 }}>
           Username cannot be changed
-       </Text>
+        </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Email Address</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Email Address
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="mail-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="mail-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
@@ -255,22 +289,34 @@ const UserDetailForm = () => {
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text adjustsFontSizeToFit style={styles.stepTitle}>Personal Details</Text>
-        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Help us know you better</Text>
+        <Text adjustsFontSizeToFit style={styles.stepTitle}>
+          Personal Details
+        </Text>
+        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+          Help us know you better
+        </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Date of Birth</Text>
-        <TouchableOpacity 
-          style={styles.inputContainer} 
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Date of Birth
+        </Text>
+        <TouchableOpacity
+          style={styles.inputContainer}
           onPress={() => setShowDatePicker(true)}
-          activeOpacity={0.7}>
-          <Icons name="calendar-outline" size={20} color="#878787" style={styles.inputIcon} />
+          activeOpacity={0.7}
+        >
+          <Icons
+            name="calendar-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <Text style={[styles.input, styles.placeholderText]}>
-            {formData.dateOfBirth.toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            {formData.dateOfBirth.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
             })}
           </Text>
           <Icons name="chevron-down-outline" size={20} color="#878787" />
@@ -278,20 +324,26 @@ const UserDetailForm = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Gender</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Gender
+        </Text>
         <View style={styles.optionsContainer}>
           {genderOptions.map((option) => (
             <TouchableOpacity
               key={option}
               style={[
                 styles.optionChip,
-                formData.gender === option && styles.optionChipSelected
+                formData.gender === option && styles.optionChipSelected,
               ]}
-              onPress={() => setFormData({ ...formData, gender: option })}>
-              <Text adjustsFontSizeToFit style={[
-                styles.optionChipText,
-                formData.gender === option && styles.optionChipTextSelected
-              ]}>
+              onPress={() => setFormData({ ...formData, gender: option })}
+            >
+              <Text
+                adjustsFontSizeToFit
+                style={[
+                  styles.optionChipText,
+                  formData.gender === option && styles.optionChipTextSelected,
+                ]}
+              >
                 {option}
               </Text>
             </TouchableOpacity>
@@ -300,23 +352,39 @@ const UserDetailForm = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Location</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Location
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="location-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="location-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Where are you from?"
             placeholderTextColor="#878787"
             value={formData.location}
-            onChangeText={(text) => setFormData({ ...formData, location: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, location: text })
+            }
           />
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Phone Number</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Phone Number
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="call-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="call-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter your phone number"
@@ -333,14 +401,28 @@ const UserDetailForm = () => {
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
-        <Text adjustsFontSizeToFit style={styles.stepTitle}>About You</Text>
-        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Share your story with the community</Text>
+        <Text adjustsFontSizeToFit style={styles.stepTitle}>
+          About You
+        </Text>
+        <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+          Share your story with the community
+        </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Bio</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Bio
+        </Text>
         <View style={[styles.inputContainer, styles.bioContainer]}>
-          <Icons name="document-text-outline" size={20} color="#878787" style={[styles.inputIcon, { alignSelf: 'flex-start', marginTop: 12 }]} />
+          <Icons
+            name="document-text-outline"
+            size={20}
+            color="#878787"
+            style={[
+              styles.inputIcon,
+              { alignSelf: "flex-start", marginTop: 12 },
+            ]}
+          />
           <TextInput
             style={[styles.input, styles.bioInput]}
             placeholder="Tell us about yourself..."
@@ -352,38 +434,59 @@ const UserDetailForm = () => {
             maxLength={150}
           />
         </View>
-        <Text adjustsFontSizeToFit style={styles.inputHint}>{formData.bio.length}/150 characters</Text>
+        <Text adjustsFontSizeToFit style={styles.inputHint}>
+          {formData.bio.length}/150 characters
+        </Text>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Occupation</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Occupation
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="briefcase-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="briefcase-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="What do you do?"
             placeholderTextColor="#878787"
             value={formData.occupation}
-            onChangeText={(text) => setFormData({ ...formData, occupation: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, occupation: text })
+            }
           />
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Relationship Status</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Relationship Status
+        </Text>
         <View style={styles.optionsContainer}>
           {relationshipOptions.map((option) => (
             <TouchableOpacity
               key={option}
               style={[
                 styles.optionChip,
-                formData.relationshipStatus === option && styles.optionChipSelected
+                formData.relationshipStatus === option &&
+                  styles.optionChipSelected,
               ]}
-              onPress={() => setFormData({ ...formData, relationshipStatus: option })}>
-              <Text adjustsFontSizeToFit style={[
-                styles.optionChipText,
-                formData.relationshipStatus === option && styles.optionChipTextSelected
-              ]}>
+              onPress={() =>
+                setFormData({ ...formData, relationshipStatus: option })
+              }
+            >
+              <Text
+                adjustsFontSizeToFit
+                style={[
+                  styles.optionChipText,
+                  formData.relationshipStatus === option &&
+                    styles.optionChipTextSelected,
+                ]}
+              >
                 {option}
               </Text>
             </TouchableOpacity>
@@ -392,9 +495,16 @@ const UserDetailForm = () => {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Website</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Website
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="globe-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="globe-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Your personal website"
@@ -420,16 +530,21 @@ const UserDetailForm = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}>
-        
+        style={styles.container}
+      >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+          >
             <Icons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text adjustsFontSizeToFit style={styles.headerTitle}>Edit Profile</Text>
+          <Text adjustsFontSizeToFit style={styles.headerTitle}>
+            Edit Profile
+          </Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -440,30 +555,36 @@ const UserDetailForm = () => {
               <TouchableOpacity
                 style={[
                   styles.progressStep,
-                  step >= s && styles.progressStepActive
+                  step >= s && styles.progressStepActive,
                 ]}
-                onPress={() => setStep(s)}>
-                <Text adjustsFontSizeToFit style={[
-                  styles.progressStepText,
-                  step >= s && styles.progressStepTextActive
-                ]}>
+                onPress={() => setStep(s)}
+              >
+                <Text
+                  adjustsFontSizeToFit
+                  style={[
+                    styles.progressStepText,
+                    step >= s && styles.progressStepTextActive,
+                  ]}
+                >
                   {s}
                 </Text>
               </TouchableOpacity>
               {s < 3 && (
-                <View style={[
-                  styles.progressLine,
-                  step > s && styles.progressLineActive
-                ]} />
+                <View
+                  style={[
+                    styles.progressLine,
+                    step > s && styles.progressLineActive,
+                  ]}
+                />
               )}
             </React.Fragment>
           ))}
         </View>
 
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}>
-          
+          contentContainerStyle={styles.scrollContent}
+        >
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
@@ -473,18 +594,21 @@ const UserDetailForm = () => {
             {step > 1 && (
               <TouchableOpacity
                 style={[styles.navBtn, styles.prevBtn]}
-                onPress={() => setStep(step - 1)}>
+                onPress={() => setStep(step - 1)}
+              >
                 <Icons name="arrow-back-outline" size={20} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.prevBtnText}>Back</Text>
+                <Text adjustsFontSizeToFit style={styles.prevBtnText}>
+                  Back
+                </Text>
               </TouchableOpacity>
             )}
-            
+
             <TouchableOpacity
               style={[
                 styles.navBtn,
                 styles.nextBtn,
                 step === 3 && styles.submitBtn,
-                loading && styles.nextBtnDisabled
+                loading && styles.nextBtnDisabled,
               ]}
               onPress={() => {
                 if (step < 3) {
@@ -493,10 +617,15 @@ const UserDetailForm = () => {
                   handleSubmit();
                 }
               }}
-              disabled={loading}>
+              disabled={loading}
+            >
               <View style={styles.nextBtnContent}>
                 <Text adjustsFontSizeToFit style={styles.nextBtnText}>
-                  {step === 3 ? (loading ? "Saving..." : "Save Profile") : "Continue"}
+                  {step === 3
+                    ? loading
+                      ? "Saving..."
+                      : "Save Profile"
+                    : "Continue"}
                 </Text>
                 {step !== 3 && (
                   <Icons name="arrow-forward-outline" size={20} color="#fff" />
@@ -551,8 +680,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "#2f2f2f",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     color: "#fff",
@@ -560,9 +689,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 24,
   },
@@ -570,29 +699,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#2f2f2f',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#2f2f2f",
+    justifyContent: "center",
+    alignItems: "center",
   },
   progressStepActive: {
-    backgroundColor: '#3897f0',
+    backgroundColor: "#3897f0",
   },
   progressStepText: {
-    color: '#878787',
+    color: "#878787",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   progressStepTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
   progressLine: {
     width: 50,
     height: 2,
-    backgroundColor: '#2f2f2f',
+    backgroundColor: "#2f2f2f",
     marginHorizontal: 8,
   },
   progressLineActive: {
-    backgroundColor: '#3897f0',
+    backgroundColor: "#3897f0",
   },
   scrollContent: {
     flexGrow: 1,
@@ -606,87 +735,87 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   stepTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   stepSubtitle: {
-    color: '#878787',
+    color: "#878787",
     fontSize: 14,
   },
   imageUploadContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
-    position: 'relative',
+    position: "relative",
   },
   profileImageWrapper: {
-    position: 'relative',
+    position: "relative",
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 3,
-    borderColor: '#3897f0',
+    borderColor: "#3897f0",
   },
   imageEditBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 4,
     right: 4,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#3897f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#3897f0",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: '#0F0F0F',
+    borderColor: "#0F0F0F",
   },
   imagePlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#1C1C1E',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#1C1C1E",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: '#3897f0',
-    borderStyle: 'dashed',
+    borderColor: "#3897f0",
+    borderStyle: "dashed",
   },
   imagePlaceholderText: {
-    color: '#3897f0',
+    color: "#3897f0",
     fontSize: 8,
     marginTop: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   uploadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1E",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2f2f2f',
+    borderColor: "#2f2f2f",
     paddingHorizontal: 12,
     minHeight: 48,
   },
@@ -695,54 +824,54 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
     paddingVertical: 12,
   },
   placeholderText: {
-    color: '#fff',
+    color: "#fff",
   },
   inputHint: {
-    color: '#878787',
+    color: "#878787",
     fontSize: 11,
     marginTop: 6,
     marginLeft: 4,
   },
   bioContainer: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   bioInput: {
     minHeight: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     paddingTop: 12,
   },
   optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   optionChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2f2f2f',
+    borderColor: "#2f2f2f",
   },
   optionChipSelected: {
-    backgroundColor: '#3897f0',
-    borderColor: '#3897f0',
+    backgroundColor: "#3897f0",
+    borderColor: "#3897f0",
   },
   optionChipText: {
-    color: '#878787',
+    color: "#878787",
     fontSize: 14,
   },
   optionChipTextSelected: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   navigationButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 20,
     marginBottom: 30,
@@ -751,39 +880,39 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   prevBtn: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     borderWidth: 1,
-    borderColor: '#3897f0',
-    flexDirection: 'row',
+    borderColor: "#3897f0",
+    flexDirection: "row",
     gap: 8,
   },
   prevBtnText: {
-    color: '#3897f0',
+    color: "#3897f0",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   nextBtn: {
-    backgroundColor: '#3897f0',
+    backgroundColor: "#3897f0",
   },
   submitBtn: {
-    backgroundColor: '#3897f0',
+    backgroundColor: "#3897f0",
   },
   nextBtnDisabled: {
     opacity: 0.5,
   },
   nextBtnContent: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 8,
   },
   nextBtnText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

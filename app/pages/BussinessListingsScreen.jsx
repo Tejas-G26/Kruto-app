@@ -1,14 +1,27 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Alert, RefreshControl, ActivityIndicator, Modal,Share } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
+  Modal,
+  Share,
+} from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
-import { supabase } from '../../lib/supabase';
+import { supabase } from "../../lib/supabase";
 
 const { width } = Dimensions.get("window");
 
 // Use existing images from your project
-const DEFAULT_PRODUCT_IMAGE =  {
-  uri: "https://iili.io/BoNMnj4.png",
+const DEFAULT_PRODUCT_IMAGE = {
+  uri: "https://iili.io/BzziePs.md.png",
 };
 
 const BussinessListedScreen = ({ navigation }) => {
@@ -22,7 +35,9 @@ const BussinessListedScreen = ({ navigation }) => {
 
   // Get current user
   const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     setUser(user);
     setUserId(user.id);
     return user;
@@ -34,23 +49,22 @@ const BussinessListedScreen = ({ navigation }) => {
       if (!userId) return;
 
       const { data, error } = await supabase
-        .from('business_listings')
-        .select('*')
-        .eq('created_user_id', userId)
-        .order('created_at', { ascending: false });
+        .from("business_listings")
+        .select("*")
+        .eq("created_user_id", userId)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
-      const parsedData = data.map(item => ({
+
+      const parsedData = data.map((item) => ({
         ...item,
-        images: item.images_url ? item.images_url.split(',') : []
+        images: item.images_url ? item.images_url.split(",") : [],
       }));
-       
+
       setListings(parsedData);
-     
     } catch (error) {
-      console.error('Error fetching user listings:', error);
-      Alert.alert('Error', 'Failed to load your listings');
+      console.error("Error fetching user listings:", error);
+      Alert.alert("Error", "Failed to load your listings");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,20 +90,19 @@ const BussinessListedScreen = ({ navigation }) => {
   const handleEdit = (listing) => {
     setShowOptionsModal(false);
     // Navigate to edit form with listing data
-    navigation.navigate('business-form', { 
-      editMode: true, 
-      listingData: listing 
+    navigation.navigate("business-form", {
+      editMode: true,
+      listingData: listing,
     });
   };
 
   const sharePost = async (business_id) => {
-      const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
-  
-      await Share.share({
-        message: "Kruto Business : " + link,
-      });
-    };
-  
+    const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
+
+    await Share.share({
+      message: "Kruto Business : " + link,
+    });
+  };
 
   // Handle delete listing
   const handleDelete = async (listing) => {
@@ -105,53 +118,88 @@ const BussinessListedScreen = ({ navigation }) => {
             try {
               // Verify user is the creator
               if (listing.created_user_id !== userId) {
-                Alert.alert("Error", "You don't have permission to delete this listing");
+                Alert.alert(
+                  "Error",
+                  "You don't have permission to delete this listing",
+                );
                 return;
               }
 
               // Delete from database
               const { error } = await supabase
-                .from('business_listings')
+                .from("business_listings")
                 .delete()
-                .eq('business_id', listing.business_id)
-                .eq('created_user_id', userId); // Extra security check
+                .eq("business_id", listing.business_id)
+                .eq("created_user_id", userId); // Extra security check
 
               if (error) throw error;
 
               // Update local state
-              setListings(prevListings => 
-                prevListings.filter(item => item.business_id !== listing.business_id)
+              setListings((prevListings) =>
+                prevListings.filter(
+                  (item) => item.business_id !== listing.business_id,
+                ),
               );
-              
-              Alert.alert("Success", "Listing deleted successfully");
+
+              //Alert.alert("Success", "Listing deleted successfully");
               setShowOptionsModal(false);
             } catch (error) {
-              console.error('Error deleting listing:', error);
-              Alert.alert("Error", "Failed to delete listing. Please try again.");
+              console.error("Error deleting listing:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete listing. Please try again.",
+              );
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   // Get primary price display
   const getPrimaryPrice = (item) => {
-    if (item.price_per_hour) return { value: item.price_per_hour, unit: 'hour' };
-    if (item.price_per_day) return { value: item.price_per_day, unit: 'day' };
-    if (item.price_per_week) return { value: item.price_per_week, unit: 'week' };
-    return null;
+    const type = item?.type?.toLowerCase()?.trim();
+
+    const selling = Number(item?.selling_price);
+    const hour = Number(item?.price_per_hour);
+    const day = Number(item?.price_per_day);
+    const week = Number(item?.price_per_week);
+
+    // ✅ SELL
+    if (type === "sell") {
+      if (selling > 0) {
+        return { value: selling, unit: null };
+      }
+      return { value: "None", unit: null }; // ✅ show None
+    }
+
+    // ✅ RENT
+    if (type === "rent") {
+      if (hour > 0) return { value: hour, unit: "hr" };
+      if (day > 0) return { value: day, unit: "day" };
+      if (week > 0) return { value: week, unit: "week" };
+
+      return { value: "None", unit: null }; // ✅ show None
+    }
+
+    return { value: "None", unit: null };
   };
 
   // Get condition color
   const getConditionColor = (condition) => {
-    switch(condition?.toLowerCase()) {
-      case 'new': return '#4CAF50';
-      case 'like new': return '#8BC34A';
-      case 'excellent': return '#CDDC39';
-      case 'good': return '#FFC107';
-      case 'fair': return '#FF9800';
-      default: return '#FFD700';
+    switch (condition?.toLowerCase()) {
+      case "new":
+        return "#4CAF50";
+      case "like new":
+        return "#8BC34A";
+      case "excellent":
+        return "#CDDC39";
+      case "good":
+        return "#FFC107";
+      case "fair":
+        return "#FF9800";
+      default:
+        return "#FFD700";
     }
   };
 
@@ -161,7 +209,7 @@ const BussinessListedScreen = ({ navigation }) => {
     return {
       text: isAvailable ? "Available" : "Booked",
       color: isAvailable ? "#4CAF50" : "#FF6B6B",
-      icon: isAvailable ? "checkmark-circle" : "time"
+      icon: isAvailable ? "checkmark-circle" : "time",
     };
   };
 
@@ -172,50 +220,77 @@ const BussinessListedScreen = ({ navigation }) => {
     const conditionColor = getConditionColor(item.condition);
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('bfv', { businessId: item.business_id, data: item })}
-        activeOpacity={0.95}>
-        
+        onPress={() =>
+          navigation.navigate("BusinessDetails", {
+            businessId: item.business_id,
+            data: item,
+          })
+        }
+        activeOpacity={0.95}
+      >
         {/* Image Section with Overlay */}
         <View style={styles.imageContainer}>
-          <Image 
-            style={styles.mainImage} 
-            source={item.images?.[0] ? { uri: item.images[0] } : DEFAULT_PRODUCT_IMAGE}
+          <Image
+            style={styles.mainImage}
+            source={
+              item.images?.[0] ? { uri: item.images[0] } : DEFAULT_PRODUCT_IMAGE
+            }
             resizeMode="cover"
           />
-          
-          {/* Availability Badge Overlay */}
-          <View style={[styles.availabilityOverlay, { backgroundColor: availability.color }]}>
-            <Icons name={availability.icon} size={12} color="#fff" />
-            <Text adjustsFontSizeToFit style={styles.availabilityOverlayText}>{availability.text}</Text>
-          </View>
 
-  
+          {/* Availability Badge Overlay */}
+          <View
+            style={[
+              styles.availabilityOverlay,
+              { backgroundColor: availability.color },
+            ]}
+          >
+            <Icons name={availability.icon} size={12} color="#fff" />
+            <Text adjustsFontSizeToFit style={styles.availabilityOverlayText}>
+              {availability.text}
+            </Text>
+          </View>
 
           <View style={styles.priceContainer}>
             {primaryPrice && (
               <View style={styles.priceTag}>
-                <Text adjustsFontSizeToFit style={styles.priceTagCurrency}>₹</Text>
-                <Text adjustsFontSizeToFit style={styles.priceTagValue}>{primaryPrice.value}</Text>
-                <Text adjustsFontSizeToFit style={styles.priceTagUnit}>/{primaryPrice.unit}</Text>
+                {primaryPrice.value !== "₹None" && (
+                  <Text style={styles.priceTagCurrency}>₹</Text>
+                )}
+
+                <Text adjustsFontSizeToFit style={styles.priceTagValue}>
+                  {primaryPrice.value}
+                </Text>
+
+                {primaryPrice.unit && primaryPrice.value !== "₹None" && (
+                  <Text adjustsFontSizeToFit style={styles.priceTagUnit}>
+                    /{primaryPrice.unit}
+                  </Text>
+                )}
               </View>
             )}
-            
+
             {primaryPrice && (
-              <View style={styles.priceTag_type}>
-                <Text adjustsFontSizeToFit style={styles.priceTagValue}>{item.type}</Text>
+              <View>
+                {item.type && (
+                  <View style={styles.priceTag_type}>
+                    <Text style={styles.priceTagValue}>{item.type}</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
 
           {/* Ellipsis Menu Button - Top Right Corner */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.ellipsisButton}
             onPress={() => {
               setSelectedListing(item);
               setShowOptionsModal(true);
-            }}>
+            }}
+          >
             <Icons name="ellipsis-vertical" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -225,11 +300,25 @@ const BussinessListedScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.cardHeader}>
             <View style={styles.titleSection}>
-              <Text adjustsFontSizeToFit style={styles.title} numberOfLines={1}>{item.title}</Text>
+              <Text adjustsFontSizeToFit style={styles.title} numberOfLines={1}>
+                {item.title}
+              </Text>
               {item.condition && (
-                <View style={[styles.conditionBadge, { backgroundColor: conditionColor + '20' }]}>
-                  <Icons name="checkbox-outline" size={12} color={conditionColor} />
-                  <Text adjustsFontSizeToFit style={[styles.conditionText, { color: conditionColor }]}>
+                <View
+                  style={[
+                    styles.conditionBadge,
+                    { backgroundColor: conditionColor + "20" },
+                  ]}
+                >
+                  <Icons
+                    name="checkbox-outline"
+                    size={12}
+                    color={conditionColor}
+                  />
+                  <Text
+                    adjustsFontSizeToFit
+                    style={[styles.conditionText, { color: conditionColor }]}
+                  >
                     {item.condition}
                   </Text>
                 </View>
@@ -247,14 +336,16 @@ const BussinessListedScreen = ({ navigation }) => {
             <View style={styles.infoChip}>
               <Icons name="location-outline" size={14} color="#3897f0" />
               <Text adjustsFontSizeToFit style={styles.infoChipText}>
-                {item.city || "Location"} {item.state ? `, ${item.state}` : ''}
+                {item.city || "Location"} {item.state ? `, ${item.state}` : ""}
               </Text>
             </View>
-            
+
             {item.category && (
               <View style={styles.infoChip}>
                 <Icons name="pricetag-outline" size={14} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.infoChipText}>{item.category}</Text>
+                <Text adjustsFontSizeToFit style={styles.infoChipText}>
+                  {item.category}
+                </Text>
               </View>
             )}
           </View>
@@ -264,14 +355,20 @@ const BussinessListedScreen = ({ navigation }) => {
             <View style={styles.footerLeft}>
               <Icons name="time-outline" size={12} color="#878787" />
               <Text adjustsFontSizeToFit style={styles.timeText}>
-                {item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently'}
+                {item.created_at
+                  ? new Date(item.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Recently"}
               </Text>
             </View>
-            
+
             <View style={styles.footerRight}>
               <TouchableOpacity
-              onPress={() => sharePost(item.business_id)}
-              style={styles.iconButton}>
+                onPress={() => sharePost(item.business_id)}
+                style={styles.iconButton}
+              >
                 <Icons name="share-social-outline" size={16} color="#878787" />
               </TouchableOpacity>
             </View>
@@ -287,7 +384,9 @@ const BussinessListedScreen = ({ navigation }) => {
       <View style={styles.loadingContainer}>
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color="#3897f0" />
-          <Text adjustsFontSizeToFit style={styles.loadingText}>Loading your listings...</Text>
+          <Text adjustsFontSizeToFit style={styles.loadingText}>
+            Loading your listings...
+          </Text>
         </View>
       </View>
     );
@@ -298,68 +397,81 @@ const BussinessListedScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()} 
-            style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
             <Icons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          
+
           <View style={styles.logoSection}>
             <View>
-              <Text adjustsFontSizeToFit style={styles.headerTitle}>My Listings</Text>
+              <Text adjustsFontSizeToFit style={styles.headerTitle}>
+                My Listings
+              </Text>
               <Text adjustsFontSizeToFit style={styles.headerSubtitle}>
-                {listings.length} {listings.length === 1 ? 'item' : 'items'} posted
+                {listings.length} {listings.length === 1 ? "item" : "items"}{" "}
+                posted
               </Text>
             </View>
           </View>
 
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('bu')} 
-            style={styles.addButton}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("BusinessForm")}
+            style={styles.addButton}
+          >
             <Icons name="add" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Listings */}
-      <ScrollView 
+      <ScrollView
         style={styles.feed}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             tintColor="#3897f0"
             colors={["#3897f0"]}
           />
-        }>
-        
+        }
+      >
         {listings.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
               <Icons name="cube-outline" size={80} color="#2f2f2f" />
             </View>
-            <Text adjustsFontSizeToFit style={styles.emptyTitle}>No listings yet</Text>
-            <Text adjustsFontSizeToFit style={styles.emptyText}>
-              You haven't posted any listings. Start by creating your first listing!
+            <Text adjustsFontSizeToFit style={styles.emptyTitle}>
+              No listings yet
             </Text>
-            <TouchableOpacity 
+            <Text adjustsFontSizeToFit style={styles.emptyText}>
+              You haven't posted any listings. Start by creating your first
+              listing!
+            </Text>
+            <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => navigation.navigate('bu')}>
-              <Text adjustsFontSizeToFit style={styles.emptyButtonText}>Create Listing</Text>
+              onPress={() => navigation.navigate("BusinessForm")}
+            >
+              <Text adjustsFontSizeToFit style={styles.emptyButtonText}>
+                Create Listing
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             <View style={styles.resultHeader}>
-              <Text adjustsFontSizeToFit style={styles.resultCount}>Your listings</Text>
+              <Text adjustsFontSizeToFit style={styles.resultCount}>
+                Your listings
+              </Text>
             </View>
             {listings.map((item) => (
               <BusinessCard key={item.business_id} item={item} />
             ))}
           </>
         )}
-        
+
         <View style={styles.bottomPadding} />
       </ScrollView>
 
@@ -368,33 +480,43 @@ const BussinessListedScreen = ({ navigation }) => {
         transparent={true}
         visible={showOptionsModal}
         animationType="fade"
-        onRequestClose={() => setShowOptionsModal(false)}>
-        <TouchableOpacity 
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setShowOptionsModal(false)}>
+          onPress={() => setShowOptionsModal(false)}
+        >
           <View style={styles.modalContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalOption}
               onPress={() => {
-  setShowOptionsModal(false); // ✅ CLOSE FIRST
-  navigation.navigate('be', { 
-    businessId: selectedListing.business_id,
-    listingData: selectedListing
-  });
-}}
-              >
+                setShowOptionsModal(false); // ✅ CLOSE FIRST
+                navigation.navigate("EditBusiness", {
+                  businessId: selectedListing.business_id,
+                  listingData: selectedListing,
+                });
+              }}
+            >
               <Icons name="create-outline" size={24} color="#3897f0" />
-              <Text adjustsFontSizeToFit style={styles.modalOptionText}>Edit Listing</Text>
+              <Text adjustsFontSizeToFit style={styles.modalOptionText}>
+                Edit Listing
+              </Text>
             </TouchableOpacity>
-            
+
             <View style={styles.modalDivider} />
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.modalOption, styles.deleteOption]}
-              onPress={() => selectedListing && handleDelete(selectedListing)}>
+              onPress={() => selectedListing && handleDelete(selectedListing)}
+            >
               <Icons name="trash-outline" size={24} color="#FF6B6B" />
-              <Text adjustsFontSizeToFit style={[styles.modalOptionText, styles.deleteText]}>Delete Listing</Text>
+              <Text
+                adjustsFontSizeToFit
+                style={[styles.modalOptionText, styles.deleteText]}
+              >
+                Delete Listing
+              </Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -715,30 +837,30 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(255,255,255,0.1)",
   },
-   priceContainer: {
-  position: "absolute",
-  bottom: 12,
-  left: 12,
-  flexDirection: "row",
-  gap: 12,
-  alignItems: "center",
-},
-priceTag: {
-  flexDirection: "row",
-  alignItems: "baseline",
-  backgroundColor: "rgba(0,0,0,0.85)",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
-priceTag_type: {
-  flexDirection: "row",
-  alignItems: "baseline",
-  backgroundColor: "rgba(0,0,0,0.85)",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
+  priceContainer: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  priceTag: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  priceTag_type: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
 });
 
 export default BussinessListedScreen;

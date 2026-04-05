@@ -10,13 +10,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Alert,
-  Dimensions
+  Dimensions,
 } from "react-native";
 import React, { useState } from "react";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 import { supabase } from "@/lib/supabase";
 
 const { width } = Dimensions.get("window");
@@ -26,8 +26,8 @@ const CreatePost = () => {
   const router = useRouter();
 
   const [image, setImage] = useState(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -47,9 +47,9 @@ const CreatePost = () => {
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission Needed', 'Please grant camera permissions');
+
+    if (status !== "granted") {
+      Alert.alert("Permission Needed", "Please grant camera permissions");
       return;
     }
 
@@ -65,15 +65,11 @@ const CreatePost = () => {
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Add Image',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Gallery', onPress: pickImage },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    Alert.alert("Add Image", "Choose an option", [
+      { text: "Take Photo", onPress: takePhoto },
+      { text: "Choose from Gallery", onPress: pickImage },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const uploadImage = async (uri) => {
@@ -89,19 +85,16 @@ const CreatePost = () => {
       const { error } = await supabase.storage
         .from("posts")
         .upload(fileName, arrayBuffer, {
-          contentType: 'image/jpeg',
+          contentType: "image/jpeg",
         });
 
       if (error) throw error;
 
-      const { data } = supabase.storage
-        .from("posts")
-        .getPublicUrl(fileName);
-      
+      const { data } = supabase.storage.from("posts").getPublicUrl(fileName);
+
       return data.publicUrl;
-      
     } catch (error) {
-      Alert.alert('Upload Failed', error.message);
+      Alert.alert("Upload Failed", error.message);
       return null;
     } finally {
       setUploading(false);
@@ -109,38 +102,38 @@ const CreatePost = () => {
   };
 
   const createPost = async () => {
-    if (!title.trim()) return Alert.alert('Error', 'Enter title');
+    if (!title.trim()) return Alert.alert("Error", "Enter title");
 
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       let imageUrl = null;
 
-if (image) {
-  imageUrl = await uploadImage(image);
-}
-     
+      if (image) {
+        imageUrl = await uploadImage(image);
+      }
 
-      await supabase.from("posts").insert([{
-        user_id: user.id,
-        image_url: imageUrl,
-        title,
-        description: description.trim() || null,
-        created_at: new Date().toISOString(),
-      }]);
-
-      Alert.alert('Success', 'Post created!', [
-        { text: 'OK', onPress: () => router.back() }
+      await supabase.from("posts").insert([
+        {
+          user_id: user.id,
+          image_url: imageUrl,
+          title,
+          description: description.trim() || null,
+          created_at: new Date().toISOString(),
+        },
       ]);
 
-      setTitle('');
-      setDescription('');
-      setImage(null);
+      router.back();
 
+      setTitle("");
+      setDescription("");
+      setImage(null);
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert("Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -148,13 +141,16 @@ if (image) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}>
-
+        style={styles.container}
+      >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.iconBtn}
+          >
             <Icons name="close" size={22} color="#fff" />
           </TouchableOpacity>
 
@@ -164,18 +160,17 @@ if (image) {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-
           {/* IMAGE SECTION */}
-          <TouchableOpacity 
-            style={styles.imageCard} 
+          <TouchableOpacity
+            style={styles.imageCard}
             onPress={showImageOptions}
             activeOpacity={0.9}
           >
             {image ? (
               <>
-                <Image 
-                  source={{ uri: image }} 
-                  style={styles.image} 
+                <Image
+                  source={{ uri: image }}
+                  style={styles.image}
                   resizeMode="cover"
                 />
                 <View style={styles.editIcon}>
@@ -192,7 +187,9 @@ if (image) {
             {uploading && (
               <View style={styles.overlay}>
                 <ActivityIndicator color="#fff" />
-                <Text style={{ color: "#fff", marginTop: 6 }}>Uploading...</Text>
+                <Text style={{ color: "#fff", marginTop: 6 }}>
+                  Uploading...
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -223,7 +220,7 @@ if (image) {
 
           {/* BUTTON */}
           <TouchableOpacity
-            style={[styles.button, (!title) && { opacity: 0.5 }]}
+            style={[styles.button, !title && { opacity: 0.5 }]}
             onPress={createPost}
             disabled={!title || loading || uploading}
           >
@@ -236,9 +233,6 @@ if (image) {
               </>
             )}
           </TouchableOpacity>
-
-          
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -344,7 +338,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 24,
-    marginBottom:250
+    marginBottom: 250,
   },
 
   buttonText: {

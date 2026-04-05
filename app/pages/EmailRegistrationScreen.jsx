@@ -10,14 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
-import { supabase } from '../../lib/supabase' // adjust path
+import { supabase } from "../../lib/supabase"; // adjust path
 
 export const EmailRegistrationScreen = ({ navigation }) => {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -25,7 +25,7 @@ export const EmailRegistrationScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const Registration = async() => {
+  const Registration = async () => {
     if (!email || !password || !confirm) {
       Alert.alert("Error", "Please fill all fields");
       return;
@@ -53,23 +53,23 @@ export const EmailRegistrationScreen = ({ navigation }) => {
     } else {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
           {/* Logo Section */}
           <View style={styles.logoContainer}>
             <View style={styles.logoWrapper}>
-              <Image 
-                source={require('../../assets/images/Kruto_Logo.png')}
+              <Image
+                source={require("../../assets/images/Kruto_Logo.png")}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -80,22 +80,26 @@ export const EmailRegistrationScreen = ({ navigation }) => {
           <View style={styles.titleContainer}>
             <Text adjustsFontSizeToFit style={styles.title}>
               Join{" "}
-              <Text adjustsFontSizeToFit style={styles.brand}>Kruto</Text>
+              <Text adjustsFontSizeToFit style={styles.brand}>
+                Kruto
+              </Text>
             </Text>
-            <Text adjustsFontSizeToFit style={styles.subtitle}>Farming Community</Text>
+            <Text adjustsFontSizeToFit style={styles.subtitle}>
+              Farming Community
+            </Text>
             <View style={styles.descContainer}>
-            
               <Text adjustsFontSizeToFit style={styles.desc}>
                 Connect with farmers and grow together
               </Text>
-         
             </View>
           </View>
 
           {/* Registration Form Card */}
           <View style={styles.formCard}>
-            <Text adjustsFontSizeToFit style={styles.heading}>Create your account</Text>
-            
+            <Text adjustsFontSizeToFit style={styles.heading}>
+              Create your account
+            </Text>
+
             {/* Email Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputIcon}>
@@ -125,14 +129,14 @@ export const EmailRegistrationScreen = ({ navigation }) => {
                 value={password}
                 onChangeText={setPassword}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <Icons 
-                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#666" 
+                <Icons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#666"
                 />
               </TouchableOpacity>
             </View>
@@ -150,14 +154,14 @@ export const EmailRegistrationScreen = ({ navigation }) => {
                 value={confirm}
                 onChangeText={setConfirm}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 style={styles.eyeIcon}
               >
-                <Icons 
-                  name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#666" 
+                <Icons
+                  name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#666"
                 />
               </TouchableOpacity>
             </View>
@@ -180,12 +184,14 @@ export const EmailRegistrationScreen = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text adjustsFontSizeToFit style={styles.buttonText}>Create Account</Text>
+                <Text adjustsFontSizeToFit style={styles.buttonText}>
+                  Create Account
+                </Text>
               )}
             </TouchableOpacity>
 
             {/* Divider */}
-           {/*} <View style={styles.dividerContainer}>
+            {/*} <View style={styles.dividerContainer}>
               <View style={styles.divider} />
               <Text adjustsFontSizeToFit style={styles.dividerText}>or sign up with</Text>
               <View style={styles.divider} />
@@ -213,15 +219,23 @@ export const EmailRegistrationScreen = ({ navigation }) => {
             <Text style={styles.loginText}>
               Already have an account?{" "}
               <TouchableOpacity onPress={() => navigation.navigate("Login2")}>
-                <Text adjustsFontSizeToFit style={styles.login}>Sign in</Text>
+                <Text adjustsFontSizeToFit style={styles.login}>
+                  Sign in
+                </Text>
               </TouchableOpacity>
             </Text>
-            
-            <TouchableOpacity style={styles.termsButton}>
-              <Text adjustsFontSizeToFit style={styles.terms}>Terms & Conditions</Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                Linking.openURL("https://kruto-app.netlify.app/term&conditions")
+              }
+              style={styles.termsButton}
+            >
+              <Text adjustsFontSizeToFit style={styles.terms}>
+                Terms & Conditions
+              </Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

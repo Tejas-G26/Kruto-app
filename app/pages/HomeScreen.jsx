@@ -98,9 +98,11 @@ const HomeScreen = ({ navigation }) => {
 
   // 🔥 FORMAT DATE
   const formatDate = (dateString) => {
-    const d = new Date(dateString);
+    const d = new Date(dateString.replace(" ", "T") + "Z");
+
     const now = new Date();
     const diffMs = now - d;
+
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
@@ -177,7 +179,7 @@ const HomeScreen = ({ navigation }) => {
           username: user.username,
           image: user.profile_image_url
             ? { uri: user.profile_image_url }
-            :{ uri: "https://iili.io/BoNMnj4.png" },
+            : { uri: "https://iili.io/BoNMnj4.png" },
           color: "#3897f0",
           bio: user.bio || "",
         }));
@@ -635,7 +637,7 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.profileSection}
             onPress={() =>
-              navigation.navigate("oup", { user_id: item.user_id })
+              navigation.navigate("OtherUserProfile", { user_id: item.user_id })
             }
           >
             <Image
@@ -659,7 +661,9 @@ const HomeScreen = ({ navigation }) => {
 
         {/* Post Image - Only show if image_url exists */}
         <TouchableOpacity
-          onPress={() => navigation.navigate("pfv", { post_id: item.post_id })}
+          onPress={() =>
+            navigation.navigate("PostDetails", { post_id: item.post_id })
+          }
           activeOpacity={0.9}
         >
           {hasImage && (
@@ -672,7 +676,6 @@ const HomeScreen = ({ navigation }) => {
 
           {/* Title - Always show */}
           <Text
-           
             numberOfLines={1}
             style={[styles.title, !hasImage && styles.titleNoImage]}
           >
@@ -736,7 +739,7 @@ const HomeScreen = ({ navigation }) => {
 
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate("pfv", { post_id: item.post_id })
+                navigation.navigate("PostDetails", { post_id: item.post_id })
               }
               style={styles.iconBtn}
             >
@@ -825,7 +828,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.storySection}>
         <View style={{ alignItems: "center" }}>
           <TouchableOpacity
-            onPress={() => navigation.navigate("cp")}
+            onPress={() => navigation.navigate("CreatePost")}
             style={styles.addStory}
           >
             <Icons name="add" size={30} color="#3897f0" />

@@ -9,7 +9,7 @@ export default function PostPage() {
   const post_id = params?.post_id;
 
   if (!post_id) {
-    console.log("❌ post_id missing");
+    console.log("post_id missing");
     return null; // or loader
   }
 

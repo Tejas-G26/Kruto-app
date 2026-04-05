@@ -1,13 +1,25 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, TextInput, RefreshControl, ActivityIndicator,Share } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+  RefreshControl,
+  ActivityIndicator,
+  Share,
+} from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
-import { supabase } from '../../lib/supabase';
+import { supabase } from "../../lib/supabase";
 
 const { width } = Dimensions.get("window");
 
 // Use existing images from your project
-const DEFAULT_PRODUCT_IMAGE = { uri: "https://iili.io/BoNMnj4.png" };
+const DEFAULT_PRODUCT_IMAGE = { uri: "https://iili.io/BzziePs.md.png" };
 
 const BussinessHomeScreen = ({ navigation }) => {
   const [listings, setListings] = useState([]);
@@ -18,58 +30,58 @@ const BussinessHomeScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [userid, setUserid] = useState(null);
   const [categoryLoading, setCategoryLoading] = useState(false);
-   
 
   // Categories for filter
   const categories = ["All", "Rent", "Sell"];
 
   // Get current user
   const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     setUser(user);
     setUserid(user.id);
     return user;
   };
 
   const sharePost = async (business_id) => {
-      const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
-    
-      await Share.share({
-        message:'Kruto Business : '+ link,
-      });
-    };
+    const link = `https://kruto-app.netlify.app/business/${business_id}`; // ✅ correct
+
+    await Share.share({
+      message: "Kruto Business : " + link,
+    });
+  };
 
   // Fetch business listings
   const fetchListings = async () => {
     try {
       let query = supabase
-        .from('business_listings')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-        
+        .from("business_listings")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (selectedCategory !== "All") {
-        query = query.eq('type', selectedCategory);
+        query = query.eq("type", selectedCategory);
       }
 
       if (searchQuery.trim()) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location_name.ilike.%${searchQuery}%`);
+        query = query.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location_name.ilike.%${searchQuery}%`,
+        );
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      
-      const parsedData = data.map(item => ({
+
+      const parsedData = data.map((item) => ({
         ...item,
-        images: item.images_url ? item.images_url.split(',') : []
+        images: item.images_url ? item.images_url.split(",") : [],
       }));
-       
+
       setListings(parsedData);
-     
     } catch (error) {
-      console.error('Error fetching listings:', error);
+      console.error("Error fetching listings:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -96,27 +108,53 @@ const BussinessHomeScreen = ({ navigation }) => {
   }, []);
 
   const handleCategoryChange = (category) => {
-  setSelectedCategory(category);
-  setCategoryLoading(true);
-};
+    setSelectedCategory(category);
+    setCategoryLoading(true);
+  };
 
   // Get primary price display
   const getPrimaryPrice = (item) => {
-    if (item.price_per_hour) return { value: item.price_per_hour, unit: 'hour' };
-    if (item.price_per_day) return { value: item.price_per_day, unit: 'day' };
-    if (item.price_per_week) return { value: item.price_per_week, unit: 'week' };
-    return null;
-  };
+    const type = item?.type?.toLowerCase()?.trim();
 
+    const selling = Number(item?.selling_price);
+    const hour = Number(item?.price_per_hour);
+    const day = Number(item?.price_per_day);
+    const week = Number(item?.price_per_week);
+
+    // ✅ SELL
+    if (type === "sell") {
+      if (selling > 0) {
+        return { value: selling, unit: null };
+      }
+      return { value: "None", unit: null }; // ✅ show None
+    }
+
+    // ✅ RENT
+    if (type === "rent") {
+      if (hour > 0) return { value: hour, unit: "hr" };
+      if (day > 0) return { value: day, unit: "day" };
+      if (week > 0) return { value: week, unit: "week" };
+
+      return { value: "None", unit: null }; // ✅ show None
+    }
+
+    return { value: "None", unit: null };
+  };
   // Get condition color
   const getConditionColor = (condition) => {
-    switch(condition?.toLowerCase()) {
-      case 'new': return '#4CAF50';
-      case 'like new': return '#8BC34A';
-      case 'excellent': return '#CDDC39';
-      case 'good': return '#FFC107';
-      case 'fair': return '#FF9800';
-      default: return '#FFD700';
+    switch (condition?.toLowerCase()) {
+      case "new":
+        return "#4CAF50";
+      case "like new":
+        return "#8BC34A";
+      case "excellent":
+        return "#CDDC39";
+      case "good":
+        return "#FFC107";
+      case "fair":
+        return "#FF9800";
+      default:
+        return "#FFD700";
     }
   };
 
@@ -126,7 +164,7 @@ const BussinessHomeScreen = ({ navigation }) => {
     return {
       text: isAvailable ? "Available" : "Booked",
       color: isAvailable ? "#4CAF50" : "#FF6B6B",
-      icon: isAvailable ? "checkmark-circle" : "time"
+      icon: isAvailable ? "checkmark-circle" : "time",
     };
   };
 
@@ -137,42 +175,65 @@ const BussinessHomeScreen = ({ navigation }) => {
     const conditionColor = getConditionColor(item.condition);
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('bfv', { businessId: item.business_id, data: item })}
-        activeOpacity={0.95}>
-        
+        onPress={() =>
+          navigation.navigate("BusinessDetails", {
+            businessId: item.business_id,
+            data: item,
+          })
+        }
+        activeOpacity={0.95}
+      >
         {/* Image Section with Overlay */}
         <View style={styles.imageContainer}>
-          <Image 
-            style={styles.mainImage} 
-            source={item.images?.[0] ? { uri: item.images[0] } : DEFAULT_PRODUCT_IMAGE}
+          <Image
+            style={styles.mainImage}
+            source={
+              item.images?.[0] ? { uri: item.images[0] } : DEFAULT_PRODUCT_IMAGE
+            }
             resizeMode="cover"
           />
-          
-          {/* Availability Badge Overlay */}
-          <View style={[styles.availabilityOverlay, { backgroundColor: availability.color }]}>
-            <Icons name={availability.icon} size={12} color="#fff" />
-            <Text adjustsFontSizeToFit style={styles.availabilityOverlayText}>{availability.text}</Text>
-          </View>
-          
 
-        {/* Replace the absolute positioned price tags with a row */}
-<View style={styles.priceContainer}>
-  {primaryPrice && (
-    <View style={styles.priceTag}>
-      <Text adjustsFontSizeToFit style={styles.priceTagCurrency}>₹</Text>
-      <Text adjustsFontSizeToFit style={styles.priceTagValue}>{primaryPrice.value}</Text>
-      <Text adjustsFontSizeToFit style={styles.priceTagUnit}>/{primaryPrice.unit}</Text>
-    </View>
-  )}
-  
-  {primaryPrice && (
-    <View style={styles.priceTag_type}>
-      <Text adjustsFontSizeToFit style={styles.priceTagValue}>{item.type}</Text>
-    </View>
-  )}
-</View>
+          {/* Availability Badge Overlay */}
+          <View
+            style={[
+              styles.availabilityOverlay,
+              { backgroundColor: availability.color },
+            ]}
+          >
+            <Icons name={availability.icon} size={12} color="#fff" />
+            <Text adjustsFontSizeToFit style={styles.availabilityOverlayText}>
+              {availability.text}
+            </Text>
+          </View>
+
+          {/* Replace the absolute positioned price tags with a row */}
+          <View style={styles.priceContainer}>
+            {primaryPrice && (
+              <View style={styles.priceTag}>
+                {primaryPrice.value !== "₹None" && (
+                  <Text style={styles.priceTagCurrency}>₹</Text>
+                )}
+
+                <Text style={styles.priceTagValue}>{primaryPrice.value}</Text>
+
+                {primaryPrice.unit && primaryPrice.value !== "None" && (
+                  <Text style={styles.priceTagUnit}>/{primaryPrice.unit}</Text>
+                )}
+              </View>
+            )}
+
+            {primaryPrice && (
+              <View>
+                {item.type && (
+                  <View style={styles.priceTag_type}>
+                    <Text style={styles.priceTagValue}>{item.type}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Content Section */}
@@ -180,15 +241,27 @@ const BussinessHomeScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.cardHeader}>
             <View style={styles.titleSection}>
-              <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {item.title}
+              </Text>
               {item.condition && (
-                
-                <View style={[styles.conditionBadge, { backgroundColor: conditionColor + '20' }]}>
-                  <Icons name="checkbox-outline" size={12} color={conditionColor} />
-                  <Text adjustsFontSizeToFit style={[styles.conditionText, { color: conditionColor }]}>
+                <View
+                  style={[
+                    styles.conditionBadge,
+                    { backgroundColor: conditionColor + "20" },
+                  ]}
+                >
+                  <Icons
+                    name="checkbox-outline"
+                    size={12}
+                    color={conditionColor}
+                  />
+                  <Text
+                    adjustsFontSizeToFit
+                    style={[styles.conditionText, { color: conditionColor }]}
+                  >
                     {item.condition}
                   </Text>
-                  
                 </View>
               )}
             </View>
@@ -204,26 +277,34 @@ const BussinessHomeScreen = ({ navigation }) => {
             <View style={styles.infoChip}>
               <Icons name="location-outline" size={14} color="#3897f0" />
               <Text adjustsFontSizeToFit style={styles.infoChipText}>
-                {item.city || "Location"} {item.state ? `, ${item.state}` : ''}
+                {item.city || "Location"} {item.state ? `, ${item.state}` : ""}
               </Text>
             </View>
-            
+
             {item.category && (
               <View style={styles.infoChip}>
                 <Icons name="pricetag-outline" size={14} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.infoChipText}>{item.category}</Text>
+                <Text adjustsFontSizeToFit style={styles.infoChipText}>
+                  {item.category}
+                </Text>
               </View>
             )}
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionRow}>
-           
-
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.detailsButton}
-              onPress={() => navigation.navigate('bfv', { businessId: item.business_id, data: item })}>
-              <Text adjustsFontSizeToFit style={styles.detailsButtonText}>View Details</Text>
+              onPress={() =>
+                navigation.navigate("BusinessDetails", {
+                  businessId: item.business_id,
+                  data: item,
+                })
+              }
+            >
+              <Text adjustsFontSizeToFit style={styles.detailsButtonText}>
+                View Details
+              </Text>
               <Icons name="arrow-forward" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -233,15 +314,20 @@ const BussinessHomeScreen = ({ navigation }) => {
             <View style={styles.footerLeft}>
               <Icons name="time-outline" size={12} color="#878787" />
               <Text adjustsFontSizeToFit style={styles.timeText}>
-                {item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recently'}
+                {item.created_at
+                  ? new Date(item.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Recently"}
               </Text>
             </View>
-            
+
             <View style={styles.footerRight}>
-             
               <TouchableOpacity
-              onPress={()=>sharePost(item.business_id)}
-              style={styles.iconButton}>
+                onPress={() => sharePost(item.business_id)}
+                style={styles.iconButton}
+              >
                 <Icons name="share-social-outline" size={16} color="#878787" />
               </TouchableOpacity>
             </View>
@@ -257,7 +343,9 @@ const BussinessHomeScreen = ({ navigation }) => {
       <View style={styles.loadingContainer}>
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color="#3897f0" />
-          <Text adjustsFontSizeToFit style={styles.loadingText}>Loading listings...</Text>
+          <Text adjustsFontSizeToFit style={styles.loadingText}>
+            Loading listings...
+          </Text>
         </View>
       </View>
     );
@@ -269,17 +357,21 @@ const BussinessHomeScreen = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoSection}>
-            
             <View>
-              <Text adjustsFontSizeToFit style={styles.headerTitle}>Business Hub</Text>
-              <Text adjustsFontSizeToFit style={styles.headerSubtitle}>Find what you need</Text>
+              <Text adjustsFontSizeToFit style={styles.headerTitle}>
+                Business Hub
+              </Text>
+              <Text adjustsFontSizeToFit style={styles.headerSubtitle}>
+                Find what you need
+              </Text>
             </View>
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('bu')} 
-              style={styles.headerButton}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BusinessForm")}
+              style={styles.headerButton}
+            >
               <Icons name="add" size={22} color="#fff" />
             </TouchableOpacity>
 
@@ -296,7 +388,7 @@ const BussinessHomeScreen = ({ navigation }) => {
       <View style={styles.searchSection}>
         <View style={styles.searchContainer}>
           <Icons name="search" size={20} color="#878787" />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search equipment, location..."
             placeholderTextColor="#878787"
@@ -304,7 +396,10 @@ const BussinessHomeScreen = ({ navigation }) => {
             onChangeText={setSearchQuery}
           />
           {searchQuery !== "" && (
-            <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={styles.clearButton}
+            >
               <Icons name="close-circle" size={18} color="#878787" />
             </TouchableOpacity>
           )}
@@ -312,23 +407,28 @@ const BussinessHomeScreen = ({ navigation }) => {
       </View>
 
       {/* Categories Filter */}
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categoriesScroll}
-        contentContainerStyle={styles.categoriesContainer}>
+        contentContainerStyle={styles.categoriesContainer}
+      >
         {categories.map((category) => (
           <TouchableOpacity
             key={category}
             style={[
               styles.categoryChip,
-              selectedCategory === category && styles.categoryChipActive
+              selectedCategory === category && styles.categoryChipActive,
             ]}
-            onPress={() => handleCategoryChange(category)}>
-            <Text adjustsFontSizeToFit style={[
-              styles.categoryText,
-              selectedCategory === category && styles.categoryTextActive
-            ]}>
+            onPress={() => handleCategoryChange(category)}
+          >
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.categoryText,
+                selectedCategory === category && styles.categoryTextActive,
+              ]}
+            >
               {category}
             </Text>
           </TouchableOpacity>
@@ -336,51 +436,62 @@ const BussinessHomeScreen = ({ navigation }) => {
       </ScrollView>
 
       {categoryLoading && (
-  <View style={styles.categoryLoadingContainer}>
-    <ActivityIndicator size="small" color="#3897f0" />
-    <Text adjustsFontSizeToFit style={styles.categoryLoadingText}>Loading {selectedCategory} listings...</Text>
-  </View>
-)}
+        <View style={styles.categoryLoadingContainer}>
+          <ActivityIndicator size="small" color="#3897f0" />
+          <Text adjustsFontSizeToFit style={styles.categoryLoadingText}>
+            Loading {selectedCategory} listings...
+          </Text>
+        </View>
+      )}
 
       {/* Listings */}
-      <ScrollView 
+      <ScrollView
         style={styles.feed}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             tintColor="#3897f0"
             colors={["#3897f0"]}
           />
-        }>
-        
+        }
+      >
         {listings.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
               <Icons name="cube-outline" size={80} color="#2f2f2f" />
             </View>
-            <Text adjustsFontSizeToFit style={styles.emptyTitle}>No listings found</Text>
-            <Text adjustsFontSizeToFit style={styles.emptyText}>
-              {searchQuery ? "Try a different search term" : "Be the first to list equipment"}
+            <Text adjustsFontSizeToFit style={styles.emptyTitle}>
+              No listings found
             </Text>
-            <TouchableOpacity 
+            <Text adjustsFontSizeToFit style={styles.emptyText}>
+              {searchQuery
+                ? "Try a different search term"
+                : "Be the first to list equipment"}
+            </Text>
+            <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => navigation.navigate('business-form')}>
-              <Text adjustsFontSizeToFit style={styles.emptyButtonText}>List Equipment</Text>
+              onPress={() => navigation.navigate("business-form")}
+            >
+              <Text adjustsFontSizeToFit style={styles.emptyButtonText}>
+                List Equipment
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             <View style={styles.resultHeader}>
-              <Text adjustsFontSizeToFit style={styles.resultCount}>{listings.length} items found</Text>
+              <Text adjustsFontSizeToFit style={styles.resultCount}>
+                {listings.length} items found
+              </Text>
             </View>
             {listings.map((item) => (
               <BusinessCard key={item.business_id} item={item} />
             ))}
           </>
         )}
-        
+
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
@@ -496,12 +607,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#1C1C1E",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
-    height:40
+    height: 40,
   },
   categoryChipActive: {
     backgroundColor: "#ffffff",
     borderColor: "#fff",
-    height:40
+    height: 40,
   },
   categoryText: {
     color: "#878787",
@@ -569,17 +680,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   priceTag_type: {
-  position: "absolute",
-  bottom: 12,
-  left: "40%", // Or use a percentage that works for your layout
-  flexDirection: "row",
-  alignItems: "baseline",
-  backgroundColor: "rgba(0,0,0,0.85)",
-  paddingHorizontal: 12,
-  paddingVertical: 1,
-  borderRadius: 20,
-  maxWidth: "50%", // Prevent overflow
-},
+    position: "absolute",
+    bottom: 12,
+    left: "40%", // Or use a percentage that works for your layout
+    flexDirection: "row",
+    alignItems: "baseline",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 1,
+    borderRadius: 20,
+    maxWidth: "50%", // Prevent overflow
+  },
   priceTagCurrency: {
     color: "#4CAF50",
     fontSize: 14,
@@ -626,7 +737,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  
+
   description: {
     color: "#9a9a9a",
     fontSize: 13,
@@ -760,45 +871,45 @@ const styles = StyleSheet.create({
     height: 80,
   },
   priceContainer: {
-  position: "absolute",
-  bottom: 12,
-  left: 12,
-  flexDirection: "row",
-  gap: 12,
-  alignItems: "center",
-},
-priceTag: {
-  flexDirection: "row",
-  alignItems: "baseline",
-  backgroundColor: "rgba(0,0,0,0.85)",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
-priceTag_type: {
-  flexDirection: "row",
-  alignItems: "baseline",
-  backgroundColor: "rgba(0,0,0,0.85)",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
-categoryLoadingContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  paddingVertical: 12,
-  gap: 10,
-  backgroundColor: "#1C1C1E",
-  marginHorizontal: 16,
-  marginVertical: 8,
-  borderRadius: 12,
-},
-categoryLoadingText: {
-  color: "#3897f0",
-  fontSize: 13,
-  fontWeight: "500",
-},
-// Remove these styles:
-// priceTag_type: { position: "absolute", left: 253, ... }
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  priceTag: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  priceTag_type: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  categoryLoadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 10,
+    backgroundColor: "#1C1C1E",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+  },
+  categoryLoadingText: {
+    color: "#3897f0",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  // Remove these styles:
+  // priceTag_type: { position: "absolute", left: 253, ... }
 });

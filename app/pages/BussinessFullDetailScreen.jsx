@@ -22,8 +22,7 @@ const { width } = Dimensions.get("window");
 
 const BussinessFullDetailScreen = (props) => {
   const { route } = props;
- const  businessId =
-    props?. businessId || route?.params?.businessId;
+  const businessId = props?.businessId || route?.params?.businessId;
   const navigation = useNavigation();
   const [comment, setComment] = useState("");
   const [liked, setLiked] = useState(false);
@@ -39,7 +38,7 @@ const BussinessFullDetailScreen = (props) => {
   const flatListRef = useRef(null);
 
   // Get business ID from route params
- 
+
   const passedData = route?.params?.data;
 
   // Fetch current user
@@ -132,10 +131,10 @@ const BussinessFullDetailScreen = (props) => {
 
       if (businessId) {
         if (!businessId && !passedData) {
-  console.log("❌ businessId missing");
-  setLoading(false);
-  return;
-}
+          console.log("❌ businessId missing");
+          setLoading(false);
+          return;
+        }
 
         const { data, error } = await supabase
           .from("business_listings")
@@ -406,11 +405,42 @@ const BussinessFullDetailScreen = (props) => {
 
   // Format price display
   const formatPrice = () => {
-    if (listing?.price_per_hour) return `₹${listing.price_per_hour}/hr`;
-    if (listing?.price_per_day) return `₹${listing.price_per_day}/day`;
-    if (listing?.price_per_week) return `₹${listing.price_per_week}/week`;
-    return "Price on request";
+    const type = listing?.type?.toLowerCase()?.trim();
+
+    const selling = Number(listing?.selling_price);
+    const hour = Number(listing?.price_per_hour);
+    const day = Number(listing?.price_per_day);
+    const week = Number(listing?.price_per_week);
+
+    // ✅ SELL
+    if (type === "sell") {
+      if (selling > 0) return `₹${selling}`;
+      return "None";
+    }
+
+    // ✅ RENT
+    if (type === "rent") {
+      if (hour > 0) return `₹${hour}/hr`;
+      if (day > 0) return `₹${day}/day`;
+      if (week > 0) return `₹${week}/week`;
+      return "None";
+    }
+
+    return "None";
   };
+
+  //ios to normal date formater
+  const formatDateDMY = (isoDate) => {
+  if (!isoDate) return "";
+
+  const date = new Date(isoDate);
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
 
   // Get condition color
   const getConditionColor = (condition) => {
@@ -430,6 +460,15 @@ const BussinessFullDetailScreen = (props) => {
       default:
         return "#FFD700";
     }
+  };
+
+  const getPriceLabel = () => {
+    const type = listing?.type?.toLowerCase()?.trim();
+
+    if (type === "sell") return "Selling Price";
+    if (type === "rent") return "Rental Price";
+
+    return null;
   };
 
   // Get availability color
@@ -491,12 +530,12 @@ const BussinessFullDetailScreen = (props) => {
     }
 
     return (
-     <Image
-  style={styles.postImage}
-  source={{
-    uri: item || "https://iili.io/BoNMnj4.png",
-  }}
-/>
+      <Image
+        style={styles.postImage}
+        source={{
+          uri: item || "https://iili.io/BoNMnj4.png",
+        }}
+      />
     );
   };
 
@@ -511,11 +550,11 @@ const BussinessFullDetailScreen = (props) => {
   };
 
   useEffect(() => {
-  if (!businessId) return;
+    if (!businessId) return;
 
-  getCurrentUser();
-  fetchListingDetails();
-}, [businessId]);
+    getCurrentUser();
+    fetchListingDetails();
+  }, [businessId]);
 
   useEffect(() => {
     if (listing && currentUser) {
@@ -578,9 +617,7 @@ const BussinessFullDetailScreen = (props) => {
             <Icons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Product Details</Text>
-          <TouchableOpacity>
-
-          </TouchableOpacity>
+          <TouchableOpacity></TouchableOpacity>
         </View>
 
         <ScrollView
@@ -660,7 +697,7 @@ const BussinessFullDetailScreen = (props) => {
             <View style={styles.profileHeader}>
               <TouchableOpacity
                 onPress={() => {
-                  navigation.navigate("oup", {
+                  navigation.navigate("OtherUserProfile", {
                     user_id: listing.created_user_id,
                   });
                 }}
@@ -707,12 +744,13 @@ const BussinessFullDetailScreen = (props) => {
             {/* Price and Availability Row */}
             <View style={styles.priceRow}>
               <View>
-                <Text adjustsFontSizeToFit style={styles.priceLabel}>
-                  Rental Price
-                </Text>
-                <Text adjustsFontSizeToFit style={styles.price}>
-                  {formatPrice()}
-                </Text>
+                {formatPrice() && (
+                  <>
+                    <Text style={styles.priceLabel}>{getPriceLabel()}</Text>
+
+                    <Text style={styles.price}>{formatPrice()}</Text>
+                  </>
+                )}
               </View>
               <View
                 style={[
@@ -744,14 +782,12 @@ const BussinessFullDetailScreen = (props) => {
               ]}
             >
               <Icons
-                name={
-                  listing.is_available === "Sell" ? "checkmark-circle" : "time"
-                }
+                name={listing.type === "Sell" ? "checkmark-circle" : "time"}
                 size={16}
                 color="#fff"
               />
               <Text adjustsFontSizeToFit style={styles.availabilityText_type}>
-                {listing.type || "sell"}
+                {listing.type || "None"}
               </Text>
             </View>
 
@@ -788,18 +824,13 @@ const BussinessFullDetailScreen = (props) => {
               <View style={styles.detailItem}>
                 <Icons name="location" size={18} color="#ff6b6b" />
                 <View>
-                  <Text style={styles.detailLabel}>
-                    Location
-                  </Text>
+                  <Text style={styles.detailLabel}>Location</Text>
                   <Text adjustsFontSizeToFit style={styles.detailValue}>
                     {listing.city || "Location"}{" "}
                     {listing.state ? `, ${listing.state}` : ""}
                   </Text>
                 </View>
               </View>
-
-          
-
 
               <View style={styles.detailItem}>
                 <Icons
@@ -887,6 +918,56 @@ const BussinessFullDetailScreen = (props) => {
                   </Text>
                 </View>
               )}
+              {listing.price_per_hour && (
+                <View style={styles.specRow}>
+                  <Text adjustsFontSizeToFit style={styles.specLabel}>
+                    Per hour
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.specValue}>
+                    ₹{listing.price_per_hour}
+                  </Text>
+                </View>
+              )}
+              {listing.price_per_day && (
+                <View style={styles.specRow}>
+                  <Text adjustsFontSizeToFit style={styles.specLabel}>
+                    Per Day
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.specValue}>
+                    ₹{listing.price_per_day}
+                  </Text>
+                </View>
+              )}
+              {listing.price_per_week && (
+                <View style={styles.specRow}>
+                  <Text adjustsFontSizeToFit style={styles.specLabel}>
+                    Per Day
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.specValue}>
+                    ₹{listing.price_per_week}
+                  </Text>
+                </View>
+              )}
+              {listing.availability_start && (
+                <View style={styles.specRow}>
+                  <Text adjustsFontSizeToFit style={styles.specLabel}>
+                    Available From
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.specValue}>
+                    {formatDateDMY(listing.availability_start)}
+                  </Text>
+                </View>
+              )}
+              {listing.availability_end && (
+                <View style={styles.specRow}>
+                  <Text adjustsFontSizeToFit style={styles.specLabel}>
+                    Available To
+                  </Text>
+                  <Text adjustsFontSizeToFit style={styles.specValue}>
+                    {formatDateDMY(listing.availability_end)}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Condition Notes */}
@@ -966,6 +1047,9 @@ const BussinessFullDetailScreen = (props) => {
                     <Icons name="location-outline" size={18} color="#3897f0" />
                     <Text adjustsFontSizeToFit style={styles.contactText}>
                       {listing.full_address}
+                      <Text adjustsFontSizeToFit style={styles.contactText}>
+                        ,{listing.zip_code}
+                      </Text>
                     </Text>
                   </View>
                 )}
@@ -991,7 +1075,7 @@ const BussinessFullDetailScreen = (props) => {
             {/* Rental CTA */}
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate("oup", { user_id: listing.created_user_id })
+                navigation.navigate("OtherUserProfile", { user_id: listing.created_user_id })
               }
               style={styles.rentNowBtn}
             >
@@ -1082,7 +1166,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
-    
   },
   scrollContent: {
     flexGrow: 1,

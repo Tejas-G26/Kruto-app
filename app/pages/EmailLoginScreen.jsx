@@ -10,12 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  ImageBackground,
+  Linking,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
-import { supabase } from "../../lib/supabase"; // adjust path
+import { supabase } from "../../lib/supabase";
 
 export const EmailLoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -69,14 +69,18 @@ export const EmailLoginScreen = ({ navigation }) => {
               />
             </View>
           </View>
-        
 
           {/* Title Section */}
           <View style={styles.titleContainer}>
             <Text adjustsFontSizeToFit style={styles.title}>
-              Welcome to <Text adjustsFontSizeToFit style={styles.brand}>Kruto</Text>
+              Welcome to{" "}
+              <Text adjustsFontSizeToFit style={styles.brand}>
+                Kruto
+              </Text>
             </Text>
-            <Text adjustsFontSizeToFit style={styles.subtitle}>Farming Community</Text>
+            <Text adjustsFontSizeToFit style={styles.subtitle}>
+              Farming Community
+            </Text>
             <View style={styles.descContainer}>
               <Text adjustsFontSizeToFit style={styles.desc}>
                 Connect with farmers and grow together
@@ -86,7 +90,9 @@ export const EmailLoginScreen = ({ navigation }) => {
 
           {/* Login Form Card */}
           <View style={styles.formCard}>
-            <Text adjustsFontSizeToFit style={styles.heading}>Login to your account</Text>
+            <Text adjustsFontSizeToFit style={styles.heading}>
+              Login to your account
+            </Text>
             {/* Email Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputIcon}>
@@ -126,14 +132,7 @@ export const EmailLoginScreen = ({ navigation }) => {
                 />
               </TouchableOpacity>
             </View>
-            {/* Forgot Password */}
-          
-            {/*<TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => navigation.navigate("ForgotPassword")}
-            >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>*/}
+
             {/* Login Button */}
             <TouchableOpacity
               onPress={handleLogin}
@@ -144,31 +143,11 @@ export const EmailLoginScreen = ({ navigation }) => {
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text adjustsFontSizeToFit style={styles.buttonText}>Login</Text>
+                <Text adjustsFontSizeToFit style={styles.buttonText}>
+                  Login
+                </Text>
               )}
             </TouchableOpacity>
-            
-            {/* Divider */}
-            {/*<View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text adjustsFontSizeToFit style={styles.dividerText}>or continue with</Text>
-              <View style={styles.divider} />
-            </View>*/}
-            {/* Alternative Login Options */}
-            {/*<View style={styles.altButtonsContainer}>
-              <TouchableOpacity style={styles.altBtn}>
-                <Icons name="call-outline" size={24} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.altText}>Phone</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.altBtn}>
-                <Image
-                  style={styles.googleIcon}
-                  source={require("../../assets/images/google.png")}
-                />
-                <Text adjustsFontSizeToFitt style={styles.altText}>Google</Text>
-              </TouchableOpacity>
-            </View>*/}
           </View>
 
           {/* Footer */}
@@ -176,12 +155,21 @@ export const EmailLoginScreen = ({ navigation }) => {
             <Text style={styles.loginText}>
               Don't have an account?{" "}
               <TouchableOpacity onPress={() => navigation.navigate("register")}>
-                <Text adjustsFontSizeToFit style={styles.login}>Sign up</Text>
+                <Text adjustsFontSizeToFit style={styles.login}>
+                  Sign up
+                </Text>
               </TouchableOpacity>
             </Text>
 
-            <TouchableOpacity style={styles.termsButton}>
-              <Text adjustsFontSizeToFit style={styles.terms}>Terms & Conditions</Text>
+            <TouchableOpacity
+              onPress={() =>
+                Linking.openURL("https://kruto-app.netlify.app/term&conditions")
+              }
+              style={styles.termsButton}
+            >
+              <Text adjustsFontSizeToFit style={styles.terms}>
+                Terms & Conditions
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

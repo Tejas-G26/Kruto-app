@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image
+  Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,7 +17,6 @@ import Icons from "@react-native-vector-icons/ionicons";
 import { supabase } from "../../lib/supabase"; // adjust path
 
 export const UsernameSelectScreen = ({ navigation }) => {
-
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [available, setAvailable] = useState(null); // true / false / null
@@ -97,22 +96,22 @@ export const UsernameSelectScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
           {/* Logo Section */}
           <View style={styles.logoContainer}>
             <View style={styles.logoWrapper}>
-               <Image
-                             source={require("../../assets/images/Kruto_Logo.png")}
-                             style={styles.logo}
-                             resizeMode="contain"
-                           />
+              <Image
+                source={require("../../assets/images/Kruto_Logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
             </View>
           </View>
 
@@ -123,18 +122,16 @@ export const UsernameSelectScreen = ({ navigation }) => {
             </Text>
             <Text style={styles.subtitle}>Farming Community</Text>
             <View style={styles.descContainer}>
-            
               <Text style={styles.desc}>
                 Connect with farmers and grow together
               </Text>
-          
             </View>
           </View>
 
           {/* Form Card */}
           <View style={styles.formCard}>
             <Text style={styles.heading}>Complete your profile</Text>
-            
+
             {/* Full Name Input */}
             <View style={styles.inputWrapper}>
               <View style={styles.inputIcon}>
@@ -163,13 +160,16 @@ export const UsernameSelectScreen = ({ navigation }) => {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              
             </View>
 
             {/* Availability Status */}
             {available === true && (
               <View style={styles.availableContainer}>
-                <Icons name="checkmark-circle-outline" size={16} color="#4caf50" />
+                <Icons
+                  name="checkmark-circle-outline"
+                  size={16}
+                  color="#4caf50"
+                />
                 <Text style={styles.availableText}>Username is available</Text>
               </View>
             )}
@@ -177,7 +177,9 @@ export const UsernameSelectScreen = ({ navigation }) => {
             {available === false && (
               <View style={styles.unavailableContainer}>
                 <Icons name="close-circle-outline" size={16} color="#f44336" />
-                <Text style={styles.unavailableText}>Username already taken</Text>
+                <Text style={styles.unavailableText}>
+                  Username already taken
+                </Text>
               </View>
             )}
 
@@ -195,7 +197,10 @@ export const UsernameSelectScreen = ({ navigation }) => {
               )}
             </TouchableOpacity>
 
-             <Text adjustsFontSizeToFit style={{color:'#ffffff', fontSize:12}}>
+            <Text
+              adjustsFontSizeToFit
+              style={{ color: "#ffffff", fontSize: 12 }}
+            >
               Username cannot be changed
             </Text>
 
@@ -256,9 +261,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(56, 151, 240, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    padding:10,
+    padding: 10,
   },
-  
+
   logo: {
     width: 110,
     height: 110,

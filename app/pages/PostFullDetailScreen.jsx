@@ -35,9 +35,11 @@ const PostFullDetailScreen = (props) => {
 
   // 🔥 FORMAT DATE
   const formatDate = (dateString) => {
-    const d = new Date(dateString);
+    const d = new Date(dateString.replace(" ", "T") + "Z");
+
     const now = new Date();
     const diffMs = now - d;
+
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
@@ -53,7 +55,6 @@ const PostFullDetailScreen = (props) => {
       year: "numeric",
     });
   };
-  
 
   // Format count for likes/comments (K, M)
   const formatCount = (count) => {
@@ -72,17 +73,16 @@ const PostFullDetailScreen = (props) => {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
 
-
     // ✅ ADD THIS HERE
- if (currentUser?.id) {
-  const { data: currentUserProfile } = await supabase
-    .from("users")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .single();
+    if (currentUser?.id) {
+      const { data: currentUserProfile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .single();
 
-  setCurrentUserData(currentUserProfile);
-}
+      setCurrentUserData(currentUserProfile);
+    }
 
     // post
     const { data: postData } = await supabase
@@ -434,7 +434,7 @@ const PostFullDetailScreen = (props) => {
               <View style={styles.profileHeader}>
                 <TouchableOpacity
                   onPress={() => {
-                    navigation.navigate("oup", {
+                    navigation.navigate("OtherUserProfile", {
                       user_id: user.user_id,
                     });
                   }}
@@ -575,14 +575,14 @@ const PostFullDetailScreen = (props) => {
 
           {/* Comment Input */}
           <View style={styles.commentInputContainer}>
-           <Image
-  style={styles.inputProfileImg}
-  source={{
-    uri:
-      currentUserData?.profile_image_url ||
-      "https://iili.io/BoNMnj4.md.png",
-  }}
-/>
+            <Image
+              style={styles.inputProfileImg}
+              source={{
+                uri:
+                  currentUserData?.profile_image_url ||
+                  "https://iili.io/BoNMnj4.md.png",
+              }}
+            />
             <TextInput
               style={styles.commentInput}
               placeholder="Add a comment..."

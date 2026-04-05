@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
 import { supabase } from "@/lib/supabase";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -24,7 +25,7 @@ const CommunityHomeScreen = ({ navigation }) => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const[currentuserid,setCurrentuserid]=useState('');
+  const [currentuserid, setCurrentuserid] = useState("");
 
   // 🔥 GET CURRENT USER
   const getCurrentUser = async () => {
@@ -33,10 +34,7 @@ const CommunityHomeScreen = ({ navigation }) => {
     } = await supabase.auth.getUser();
     setCurrentuserid(user.id);
     return user;
-    
   };
-
-
 
   // 🔥 FETCH USERS
   const fetchUsers = async () => {
@@ -68,10 +66,12 @@ const CommunityHomeScreen = ({ navigation }) => {
     setFollowersIds(followers?.map((f) => f.follower_id) || []);
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchFollowData();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUsers();
+      fetchFollowData();
+    }, []),
+  );
 
   // 🔥 FOLLOW / UNFOLLOW
   const toggleFollow = async (userId) => {
@@ -104,95 +104,92 @@ const CommunityHomeScreen = ({ navigation }) => {
   // 🔥 FILTER LOGIC
   const getFilteredUsers = () => {
     let filteredUsers = users;
-    
+
     // Apply follow filter
     if (filter === "following") {
       filteredUsers = users.filter((u) => followingIds.includes(u.user_id));
     } else if (filter === "followers") {
       filteredUsers = users.filter((u) => followersIds.includes(u.user_id));
     }
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
-      filteredUsers = filteredUsers.filter((u) =>
-        u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      filteredUsers = filteredUsers.filter(
+        (u) =>
+          u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
-    
+
     // Remove current user from list
     const currentUser = getCurrentUser();
     return filteredUsers.filter((u) => u.user_id !== currentUser?.id);
   };
 
- const renderUser = async({ item }) => {
-  const isFollowing = followingIds.includes(item.user_id);
-  const isFollower = followersIds.includes(item.user_id);
-  
+  const renderUser = async ({ item }) => {
+    const isFollowing = followingIds.includes(item.user_id);
+    const isFollower = followersIds.includes(item.user_id);
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={() => {
-       navigation.navigate("oup", {
-  user_id: item.user_id,
-});
-      }}
-    >
-      <View style={styles.userCard}>
-        <View style={styles.userInfo}>
-          <Image
-            style={styles.userAvatar}
-            source={{
-              uri: item.profile_image_url || "https://iili.io/BoNMnj4.md.png",
-            }}
-          />
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => {
+          navigation.navigate("OtherUserProfile", {
+            user_id: item.user_id,
+          });
+        }}
+      >
+        <View style={styles.userCard}>
+          <View style={styles.userInfo}>
+            <Image
+              style={styles.userAvatar}
+              source={{
+                uri: item.profile_image_url || "https://iili.io/BoNMnj4.md.png",
+              }}
+            />
 
-          <View style={styles.userDetails}>
-            <Text adjustsFontSizeToFit style={styles.userName}>
-              {item.full_name || item.username}
-            </Text>
+            <View style={styles.userDetails}>
+              <Text adjustsFontSizeToFit style={styles.userName}>
+                {item.full_name || item.username}
+              </Text>
 
-            <Text adjustsFontSizeToFit style={styles.userUsername}>
-              @{item.username}
-            </Text>
+              <Text adjustsFontSizeToFit style={styles.userUsername}>
+                @{item.username}
+              </Text>
 
-            {isFollower && !isFollowing && (
-              <View style={styles.followerBadge}>
-                <Text adjustsFontSizeToFit style={styles.followerBadgeText}>
-                  Follows you
-                </Text>
-              </View>
-            )}
+              {isFollower && !isFollowing && (
+                <View style={styles.followerBadge}>
+                  <Text adjustsFontSizeToFit style={styles.followerBadgeText}>
+                    Follows you
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
 
-        {/* FOLLOW BUTTON */}
-       
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation(); // prevents chat opening
-            toggleFollow(item.user_id);
-          }}
-          style={[
-            styles.followButton,
-            isFollowing && styles.followingButton,
-          ]}
-        >
-          <Text
-          adjustsFontSizeToFit
-            style={[
-              styles.followButtonText,
-              isFollowing && styles.followingButtonText,
-            ]}
+          {/* FOLLOW BUTTON */}
+
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation(); // prevents chat opening
+              toggleFollow(item.user_id);
+            }}
+            style={[styles.followButton, isFollowing && styles.followingButton]}
           >
-            {isFollowing ? "Following" : "Follow"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-};
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.followButtonText,
+                isFollowing && styles.followingButtonText,
+              ]}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const getStats = () => {
     return {
@@ -219,7 +216,9 @@ const CommunityHomeScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.profileRow}>
-          <Text adjustsFontSizeToFit style={styles.username}>Community</Text>
+          <Text adjustsFontSizeToFit style={styles.username}>
+            Community
+          </Text>
 
           <View style={styles.headerIcons}>
             {/*<TouchableOpacity style={styles.iconCircle}>
@@ -227,10 +226,16 @@ const CommunityHomeScreen = ({ navigation }) => {
             </TouchableOpacity>*/}
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("cc")}
-              style={styles.iconCircle}>
+              onPress={() => navigation.navigate("ChatConversation")}
+              style={styles.iconCircle}
+            >
               <Icons name="repeat" size={20} color="#fff" />
-              <Text adjustsFontSizeToFit style={{color:'#fff',fontSize:10}}>Conversions</Text>
+              <Text
+                adjustsFontSizeToFit
+                style={{ color: "#fff", fontSize: 10 }}
+              >
+                Conversions
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -243,12 +248,20 @@ const CommunityHomeScreen = ({ navigation }) => {
           <Text adjustsFontSizeToFit style={styles.statLabel}>Total Users</Text>
         </View>*/}
         <View style={styles.statCard}>
-          <Text adjustsFontSizeToFit style={styles.statNumber}>{stats.following}</Text>
-          <Text adjustsFontSizeToFit style={styles.statLabel}>Following</Text>
+          <Text adjustsFontSizeToFit style={styles.statNumber}>
+            {stats.following}
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.statLabel}>
+            Following
+          </Text>
         </View>
         <View style={styles.statCard}>
-          <Text adjustsFontSizeToFit style={styles.statNumber}>{stats.followers}</Text>
-          <Text adjustsFontSizeToFit style={styles.statLabel}>Followers</Text>
+          <Text adjustsFontSizeToFit style={styles.statNumber}>
+            {stats.followers}
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.statLabel}>
+            Followers
+          </Text>
         </View>
       </View>
 
@@ -273,30 +286,61 @@ const CommunityHomeScreen = ({ navigation }) => {
 
       {/* Filter Buttons */}
       <View style={styles.filterContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScrollContent}>
+          contentContainerStyle={styles.filterScrollContent}
+        >
           <TouchableOpacity
             onPress={() => setFilter("all")}
-            style={[styles.filterBtn, filter === "all" && styles.activeFilterBtn]}>
-            <Text adjustsFontSizeToFit style={[styles.filterText, filter === "all" && styles.activeFilterText]}>
+            style={[
+              styles.filterBtn,
+              filter === "all" && styles.activeFilterBtn,
+            ]}
+          >
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.filterText,
+                filter === "all" && styles.activeFilterText,
+              ]}
+            >
               All
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setFilter("following")}
-            style={[styles.filterBtn, filter === "following" && styles.activeFilterBtn]}>
-            <Text adjustsFontSizeToFit style={[styles.filterText, filter === "following" && styles.activeFilterText]}>
+            style={[
+              styles.filterBtn,
+              filter === "following" && styles.activeFilterBtn,
+            ]}
+          >
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.filterText,
+                filter === "following" && styles.activeFilterText,
+              ]}
+            >
               Following
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setFilter("followers")}
-            style={[styles.filterBtn, filter === "followers" && styles.activeFilterBtn]}>
-            <Text adjustsFontSizeToFit style={[styles.filterText, filter === "followers" && styles.activeFilterText]}>
+            style={[
+              styles.filterBtn,
+              filter === "followers" && styles.activeFilterBtn,
+            ]}
+          >
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.filterText,
+                filter === "followers" && styles.activeFilterText,
+              ]}
+            >
               Followers
             </Text>
           </TouchableOpacity>
@@ -307,9 +351,13 @@ const CommunityHomeScreen = ({ navigation }) => {
       {getFilteredUsers().length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icons name="people-outline" size={64} color="#2f2f2f" />
-          <Text adjustsFontSizeToFit style={styles.emptyTitle}>No users found</Text>
+          <Text adjustsFontSizeToFit style={styles.emptyTitle}>
+            No users found
+          </Text>
           <Text adjustsFontSizeToFit style={styles.emptySubtitle}>
-            {searchQuery ? "Try a different search term" : "No users to display"}
+            {searchQuery
+              ? "Try a different search term"
+              : "No users to display"}
           </Text>
         </View>
       ) : (

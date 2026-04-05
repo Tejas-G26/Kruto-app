@@ -8,7 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
-  Alert
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
@@ -26,7 +26,9 @@ const SavedPostScreen = ({ navigation }) => {
 
   // Fetch current user
   const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       setCurrentUserId(user.id);
       return user.id;
@@ -40,7 +42,7 @@ const SavedPostScreen = ({ navigation }) => {
       .from("post_likes")
       .select("*", { count: "exact", head: true })
       .eq("post_id", postId);
-    
+
     if (error) {
       console.error("Error fetching likes count:", error);
       return 0;
@@ -54,7 +56,7 @@ const SavedPostScreen = ({ navigation }) => {
       .from("comments")
       .select("*", { count: "exact", head: true })
       .eq("post_id", postId);
-    
+
     if (error) {
       console.error("Error fetching comments count:", error);
       return 0;
@@ -70,8 +72,9 @@ const SavedPostScreen = ({ navigation }) => {
       .eq("user_id", userId)
       .eq("post_id", postId)
       .single();
-    
-    if (error && error.code !== "PGRST116") { // PGRST116 means no rows returned
+
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 means no rows returned
       console.error("Error checking like status:", error);
       return false;
     }
@@ -85,7 +88,7 @@ const SavedPostScreen = ({ navigation }) => {
       .select("full_name, username, profile_image_url")
       .eq("user_id", userId)
       .single();
-    
+
     if (error) {
       console.error("Error fetching user details:", error);
       return null;
@@ -105,11 +108,13 @@ const SavedPostScreen = ({ navigation }) => {
       // First, get saved posts with post basic info
       const { data: savedData, error: savedError } = await supabase
         .from("saved_posts")
-        .select(`
+        .select(
+          `
           save_id,
           created_at,
           post_id
-        `)
+        `,
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -143,12 +148,12 @@ const SavedPostScreen = ({ navigation }) => {
 
             // Fetch user details for the post author
             const userDetails = await fetchUserDetails(postData.user_id);
-            
+
             // Fetch counts and like status in parallel
             const [likesCount, commentsCount, isLiked] = await Promise.all([
               fetchLikesCount(savedItem.post_id),
               fetchCommentsCount(savedItem.post_id),
-              checkUserLiked(savedItem.post_id, userId)
+              checkUserLiked(savedItem.post_id, userId),
             ]);
 
             return {
@@ -161,18 +166,18 @@ const SavedPostScreen = ({ navigation }) => {
                 user_has_liked: isLiked,
                 author_name: userDetails?.full_name || "Unknown User",
                 author_username: userDetails?.username || "unknown",
-                author_profile_image: userDetails?.profile_image_url || null
-              }
+                author_profile_image: userDetails?.profile_image_url || null,
+              },
             };
           } catch (error) {
             console.error("Error processing saved post:", error);
             return null;
           }
-        })
+        }),
       );
 
       // Filter out any null values and set state
-      const validPosts = postsWithDetails.filter(item => item !== null);
+      const validPosts = postsWithDetails.filter((item) => item !== null);
       setSavedPosts(validPosts);
     } catch (error) {
       console.error("Error in fetchSavedPosts:", error);
@@ -185,10 +190,10 @@ const SavedPostScreen = ({ navigation }) => {
 
   // Handle post deletion from saved posts
   const handlePostDelete = (deletedPostId) => {
-    setSavedPosts(prevPosts => 
-      prevPosts.filter(item => item.post.post_id !== deletedPostId)
+    setSavedPosts((prevPosts) =>
+      prevPosts.filter((item) => item.post.post_id !== deletedPostId),
     );
-    Alert.alert("Success", "Post removed from saved");
+    //Alert.alert("Success", "Post removed from saved");
   };
 
   // Handle unsave post
@@ -213,54 +218,54 @@ const SavedPostScreen = ({ navigation }) => {
               }
 
               // Remove from local state
-              setSavedPosts(prevPosts => 
-                prevPosts.filter(item => item.save_id !== saveId)
+              setSavedPosts((prevPosts) =>
+                prevPosts.filter((item) => item.save_id !== saveId),
               );
-              
-              Alert.alert("Success", "Post removed from saved items");
+
+              //Alert.alert("Success", "Post removed from saved items");
             } catch (error) {
               console.error("Error unsaving post:", error);
               Alert.alert("Error", "Failed to remove saved post");
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   // Handle like update
   const handleLikeUpdate = async (postId, isLiked, newCount) => {
     // Update local state immediately for UI responsiveness
-    setSavedPosts(prevPosts =>
-      prevPosts.map(item =>
+    setSavedPosts((prevPosts) =>
+      prevPosts.map((item) =>
         item.post.post_id === postId
           ? {
               ...item,
               post: {
                 ...item.post,
                 likes_count: newCount,
-                user_has_liked: isLiked
-              }
+                user_has_liked: isLiked,
+              },
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
   // Handle comment update (if needed)
   const handleCommentUpdate = (postId, newCount) => {
-    setSavedPosts(prevPosts =>
-      prevPosts.map(item =>
+    setSavedPosts((prevPosts) =>
+      prevPosts.map((item) =>
         item.post.post_id === postId
           ? {
               ...item,
               post: {
                 ...item.post,
-                comments_count: newCount
-              }
+                comments_count: newCount,
+              },
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -274,7 +279,7 @@ const SavedPostScreen = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchSavedPosts();
-    }, [])
+    }, []),
   );
 
   // Render loading state
@@ -282,18 +287,22 @@ const SavedPostScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
+          <TouchableOpacity
+            style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Icons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-          <Text adjustsFontSizeToFit style={styles.headerTitle}>Saved Posts</Text>
+          <Text adjustsFontSizeToFit style={styles.headerTitle}>
+            Saved Posts
+          </Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3897f0" />
-          <Text adjustsFontSizeToFit style={styles.loadingText}>Loading saved posts...</Text>
+          <Text adjustsFontSizeToFit style={styles.loadingText}>
+            Loading saved posts...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -303,16 +312,18 @@ const SavedPostScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
 
-        <Text adjustsFontSizeToFit style={styles.headerTitle}>Saved Posts</Text>
+        <Text adjustsFontSizeToFit style={styles.headerTitle}>
+          Saved Posts
+        </Text>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerIconButton}
           onPress={() => Alert.alert("Info", "Posts you save will appear here")}
         >
@@ -320,7 +331,7 @@ const SavedPostScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -337,7 +348,9 @@ const SavedPostScreen = ({ navigation }) => {
             <View style={styles.emptyIconContainer}>
               <Icons name="bookmark-outline" size={60} color="#2f2f2f" />
             </View>
-            <Text adjustsFontSizeToFit style={styles.emptyTitle}>No saved posts yet</Text>
+            <Text adjustsFontSizeToFit style={styles.emptyTitle}>
+              No saved posts yet
+            </Text>
             <Text adjustsFontSizeToFit style={styles.emptySubtitle}>
               Posts you save will appear here
             </Text>
@@ -348,8 +361,12 @@ const SavedPostScreen = ({ navigation }) => {
             <View style={styles.statsContainer}>
               <View style={styles.statCard}>
                 <Icons name="bookmark" size={20} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.statNumber}>{savedPosts.length}</Text>
-                <Text adjustsFontSizeToFit style={styles.statLabel}>Saved Items</Text>
+                <Text adjustsFontSizeToFit style={styles.statNumber}>
+                  {savedPosts.length}
+                </Text>
+                <Text adjustsFontSizeToFit style={styles.statLabel}>
+                  Saved Items
+                </Text>
               </View>
             </View>
 
@@ -374,14 +391,18 @@ const SavedPostScreen = ({ navigation }) => {
                     onPostDelete={handlePostDelete}
                     onCommentUpdate={handleCommentUpdate}
                   />
-                  
+
                   {/* Unsave button */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.unsaveButton}
-                    onPress={() => handleUnsavePost(item.save_id, item.post.post_id)}
+                    onPress={() =>
+                      handleUnsavePost(item.save_id, item.post.post_id)
+                    }
                   >
                     <Icons name="bookmark" size={20} color="#3897f0" />
-                    <Text adjustsFontSizeToFit style={styles.unsaveText}>Saved</Text>
+                    <Text adjustsFontSizeToFit style={styles.unsaveText}>
+                      Saved
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ))}

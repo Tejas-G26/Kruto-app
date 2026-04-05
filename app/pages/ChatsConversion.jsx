@@ -11,7 +11,13 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { supabase } from "../../lib/supabase";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icons from "@react-native-vector-icons/ionicons";
@@ -134,7 +140,9 @@ const ChatsConversion = ({ navigation }) => {
       const { data: conversations, error: convError } = await supabase
         .from("conversations")
         .select("*")
-        .or(`user1_id.eq.${currentUserIdValue},user2_id.eq.${currentUserIdValue}`);
+        .or(
+          `user1_id.eq.${currentUserIdValue},user2_id.eq.${currentUserIdValue}`,
+        );
 
       if (convError) {
         console.error("Error fetching conversations:", convError);
@@ -156,19 +164,22 @@ const ChatsConversion = ({ navigation }) => {
       // Process conversations in batches to avoid overwhelming the system
       const batchSize = 10;
       const chatList = [];
-      
+
       for (let i = 0; i < conversations.length; i += batchSize) {
         const batch = conversations.slice(i, i + batchSize);
         const batchResults = await Promise.allSettled(
           batch.map(async (conv) => {
-            const otherUserId = conv.user1_id === currentUserIdValue
-              ? conv.user2_id
-              : conv.user1_id;
+            const otherUserId =
+              conv.user1_id === currentUserIdValue
+                ? conv.user2_id
+                : conv.user1_id;
 
             const [userResult, messageResult] = await Promise.allSettled([
               supabase
                 .from("users")
-                .select("full_name, username, profile_image_url, is_online, last_seen")
+                .select(
+                  "full_name, username, profile_image_url, is_online, last_seen",
+                )
                 .eq("user_id", otherUserId)
                 .single(),
               supabase
@@ -180,30 +191,36 @@ const ChatsConversion = ({ navigation }) => {
                 .maybeSingle(),
             ]);
 
-            const userData = userResult.status === "fulfilled" ? userResult.value.data : null;
-            const messageData = messageResult.status === "fulfilled" ? messageResult.value.data : null;
+            const userData =
+              userResult.status === "fulfilled" ? userResult.value.data : null;
+            const messageData =
+              messageResult.status === "fulfilled"
+                ? messageResult.value.data
+                : null;
 
             return {
               conversationId: conv.conversation_id,
               userId: otherUserId,
               user: userData,
-              lastMessage: messageData?.message_text ? decryptMessage(messageData.message_text) : "",
+              lastMessage: messageData?.message_text
+                ? decryptMessage(messageData.message_text)
+                : "",
               lastTime: messageData?.created_at || conv.created_at,
             };
-          })
+          }),
         );
-        
+
         const validResults = batchResults
-          .filter(result => result.status === "fulfilled")
-          .map(result => result.value)
-          .filter(chat => chat.user !== null);
-        
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => result.value)
+          .filter((chat) => chat.user !== null);
+
         chatList.push(...validResults);
       }
 
       // Sort chats by last message time
-      const validChats = chatList.sort((a, b) => 
-        new Date(b.lastTime) - new Date(a.lastTime)
+      const validChats = chatList.sort(
+        (a, b) => new Date(b.lastTime) - new Date(a.lastTime),
       );
 
       if (isMountedRef.current) {
@@ -236,7 +253,7 @@ const ChatsConversion = ({ navigation }) => {
     try {
       // Create and subscribe to the channel with proper order
       const channel = supabase.channel("chat-list");
-      
+
       // Add postgres_changes before subscribing
       channel
         .on(
@@ -249,7 +266,7 @@ const ChatsConversion = ({ navigation }) => {
           },
           (payload) => {
             if (!isMountedRef.current) return;
-            
+
             // Debounce fetch to avoid multiple rapid updates
             if (fetchTimeoutRef.current) {
               clearTimeout(fetchTimeoutRef.current);
@@ -259,7 +276,7 @@ const ChatsConversion = ({ navigation }) => {
                 fetchChats();
               }
             }, 500);
-          }
+          },
         )
         .subscribe((status, err) => {
           if (err) {
@@ -279,7 +296,7 @@ const ChatsConversion = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchChats();
-    }, [fetchChats])
+    }, [fetchChats]),
   );
 
   // Setup realtime subscription when currentUserId changes
@@ -287,7 +304,7 @@ const ChatsConversion = ({ navigation }) => {
     if (currentUserId) {
       setupRealtimeSubscription();
     }
-    
+
     return () => {
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
@@ -298,7 +315,7 @@ const ChatsConversion = ({ navigation }) => {
   // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     return () => {
       isMountedRef.current = false;
       if (realtimeChannelRef.current) {
@@ -320,7 +337,7 @@ const ChatsConversion = ({ navigation }) => {
       const filtered = chats.filter(
         (chat) =>
           chat.user?.full_name?.toLowerCase().includes(query) ||
-          chat.user?.username?.toLowerCase().includes(query)
+          chat.user?.username?.toLowerCase().includes(query),
       );
       setFilteredChats(filtered);
     }
@@ -356,35 +373,35 @@ const ChatsConversion = ({ navigation }) => {
   }, []);
 
   // Check if user is online
-   const isOnline = (user) => {
-  if (!user) return false;
+  const isOnline = (user) => {
+    if (!user) return false;
 
-  // If explicitly online
-  if (user.is_online) return true;
+    // If explicitly online
+    if (user.is_online) return true;
 
-  // Check last seen (fallback)
-  if (!user.last_seen) return false;
+    // Check last seen (fallback)
+    if (!user.last_seen) return false;
 
-  const diff = (Date.now() - new Date(user.last_seen)) / 1000;
+    const diff = (Date.now() - new Date(user.last_seen)) / 1000;
 
-  return diff < 120; // 2 min = still "online"
-};
+    return diff < 120; // 2 min = still "online"
+  };
 
-const getLastSeenText = (user) => {
-  if (!user?.last_seen) return "";
+  const getLastSeenText = (user) => {
+    if (!user?.last_seen) return "";
 
-  if (user.is_online) return "Active now";
+    if (user.is_online) return "Active now";
 
-  const diff = Math.floor((Date.now() - new Date(user.last_seen)) / 60000);
+    const diff = Math.floor((Date.now() - new Date(user.last_seen)) / 60000);
 
-  if (diff < 1) return "Active now";
-  if (diff < 60) return `Last seen ${diff} min ago`;
+    if (diff < 1) return "Active now";
+    if (diff < 60) return `Last seen ${diff} min ago`;
 
-  const hours = Math.floor(diff / 60);
-  if (hours < 24) return `Last seen ${hours}h ago`;
+    const hours = Math.floor(diff / 60);
+    if (hours < 24) return `Last seen ${hours}h ago`;
 
-  return new Date(user.last_seen).toLocaleDateString();
-};
+    return new Date(user.last_seen).toLocaleDateString();
+  };
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
@@ -393,36 +410,38 @@ const getLastSeenText = (user) => {
   }, [fetchChats]);
 
   // Navigate to chat
-  const navigateToChat = useCallback((item) => {
-    navigation.navigate("chat", {
-      currentUserId,
-      otherUserId: item.userId,
-      conversationId: item.conversationId,
-    });
-  }, [currentUserId, navigation]);
+  const navigateToChat = useCallback(
+    (item) => {
+      navigation.navigate("Chat", {
+        currentUserId,
+        otherUserId: item.userId,
+        conversationId: item.conversationId,
+      });
+    },
+    [currentUserId, navigation],
+  );
 
   // Memoized render item
   const renderItem = useCallback(
     ({ item, index }) => (
       <TouchableOpacity
         activeOpacity={0.7}
-        style={[
-          styles.chatItem,
-          index === 0 && styles.firstChatItem,
-        ]}
+        style={[styles.chatItem, index === 0 && styles.firstChatItem]}
         onPress={() => navigateToChat(item)}
       >
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: item.user?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
+              uri:
+                item.user?.profile_image_url ||
+                "https://iili.io/BoNMnj4.md.png",
             }}
             style={styles.avatar}
             onError={(error) => console.log("Image loading error:", error)}
           />
           {isOnline(item.user) && (
-  <View style={[styles.statusIndicator, styles.onlineStatus]} />
-)}
+            <View style={[styles.statusIndicator, styles.onlineStatus]} />
+          )}
         </View>
 
         <View style={styles.chatInfo}>
@@ -430,7 +449,11 @@ const getLastSeenText = (user) => {
             <Text adjustsFontSizeToFit style={styles.name} numberOfLines={1}>
               {item.user?.full_name || "Unknown User"}
             </Text>
-            <Text adjustsFontSizeToFit style={styles.username} numberOfLines={1}>
+            <Text
+              adjustsFontSizeToFit
+              style={styles.username}
+              numberOfLines={1}
+            >
               @{item.user?.username || "unknown"}
             </Text>
           </View>
@@ -446,7 +469,7 @@ const getLastSeenText = (user) => {
         </View>
       </TouchableOpacity>
     ),
-    [formatChatTime, isOnline, navigateToChat]
+    [formatChatTime, isOnline, navigateToChat],
   );
 
   // Memoized empty component
@@ -464,11 +487,14 @@ const getLastSeenText = (user) => {
         </Text>
       </View>
     ),
-    []
+    [],
   );
 
   // Memoized key extractor
-  const keyExtractor = useCallback((item) => item.conversationId.toString(), []);
+  const keyExtractor = useCallback(
+    (item) => item.conversationId.toString(),
+    [],
+  );
 
   // Animation interpolations
   const searchBarWidth = searchAnim.interpolate({
@@ -563,7 +589,10 @@ const getLastSeenText = (user) => {
                 clearButtonMode="while-editing"
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <TouchableOpacity
+                  onPress={clearSearch}
+                  style={styles.clearButton}
+                >
                   <Icons name="close-circle" size={18} color="#8E8E93" />
                 </TouchableOpacity>
               )}
@@ -636,7 +665,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   avatarContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 14,
   },
   avatar: {
@@ -644,31 +673,31 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     borderWidth: 2,
-    borderColor: '#2C2C2E',
-    backgroundColor: '#2C2C2E',
+    borderColor: "#2C2C2E",
+    backgroundColor: "#2C2C2E",
   },
   statusIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 2,
     right: 2,
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#1C1C1E',
-    backgroundColor: '#FF3B30',
+    borderColor: "#1C1C1E",
+    backgroundColor: "#FF3B30",
   },
   onlineStatus: {
-    backgroundColor: '#4CD964',
+    backgroundColor: "#4CD964",
   },
   chatInfo: {
     flex: 1,
   },
   nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     marginBottom: 4,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   name: {
     color: "#fff",
@@ -714,17 +743,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: 8,
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   headerTitle: {
     color: "#fff",
@@ -738,7 +767,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     minWidth: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerBadgeText: {
     color: "#fff",
@@ -750,21 +779,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1,
   },
   searchContainer: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#1C1C1E",
     borderRadius: 20,
     paddingHorizontal: 12,
     height: 40,
-    width: '100%',
+    width: "100%",
   },
   searchInput: {
     flex: 1,
@@ -778,18 +807,18 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 32,
     marginTop: 100,
   },
   emptyIconContainer: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     width: 100,
     height: 100,
     borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
   },
   emptyStateTitle: {
@@ -801,13 +830,13 @@ const styles = StyleSheet.create({
   emptyStateText: {
     color: "#8E8E93",
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     color: "#8E8E93",

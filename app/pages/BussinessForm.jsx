@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
 } from "react-native";
 import Icons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "expo-router";
@@ -19,6 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import { supabase } from "../../lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { KeyboardAvoidingView } from "react-native";
 
 const BusinessForm = () => {
   const navigation = useNavigation();
@@ -31,12 +32,13 @@ const BusinessForm = () => {
     description: "",
     category: "",
     subCategory: "",
-    type:'',
+    type: "",
 
     // Pricing & Availability
     rentPerHour: "",
     rentPerDay: "",
     rentPerWeek: "",
+    sellingPrice: "",
     securityDeposit: "",
     minimumRentPeriod: "1 day",
     availableFrom: new Date(),
@@ -70,21 +72,37 @@ const BusinessForm = () => {
 
   const [selectedFeatures, setSelectedFeatures] = useState([]);
   const [selectedAccessories, setSelectedAccessories] = useState([]);
-  const [showDatePicker, setShowDatePicker] = useState({ field: null, show: false });
+  const [showDatePicker, setShowDatePicker] = useState({
+    field: null,
+    show: false,
+  });
 
   // Categories and Subcategories
   const categories = {
-    Electronics: ["Cameras", "Laptops", "Audio Equipment", "Gaming", "Drones", "Projectors"],
-    Photography: ["DSLR Cameras", "Lenses", "Lighting", "Tripods", "Studio Equipment"],
-    Tools: ["Power Tools", "Hand Tools", "Gardening", "Construction", "Woodworking"],
-    Vehicles: ["Cars", "Bikes", "Scooters", "Boats", "RVs"],
-    Events: ["Tents", "Chairs", "Tables", "Sound Systems", "Lighting", "Decorations"],
-    Sports: ["Camping Gear", "Bicycles", "Skis", "Surfboards", "Sports Equipment"],
-    Fashion: ["Clothing", "Accessories", "Costumes", "Luxury Items"],
+    Electronics: [],
+    Mobiles: [],
+    Computers: [],
+    Photography: [],
+    Home_Appliances: [],
+    Furniture: [],
+    Vehicles: [],
+    Tools: [],
+    Construction: [],
+    Farming: [],
+    Industrial_Machinery: [],
+    Office_Equipment: [],
+    Events: [],
+    Sports: [],
+    Fashion: [],
+    Books: [],
+    Kids: [],
+    Pets: [],
+    Real_Estate: [],
+    Services: [],
+    Other: [],
   };
 
   const categoriesType = ["Sell", "Rent"];
-  
 
   const conditions = [
     "New",
@@ -129,7 +147,9 @@ const BusinessForm = () => {
 
       if (error) throw error;
 
-      const { data } = supabase.storage.from("bussiness").getPublicUrl(fileName);
+      const { data } = supabase.storage
+        .from("bussiness")
+        .getPublicUrl(fileName);
 
       return data.publicUrl;
     } catch (error) {
@@ -159,11 +179,12 @@ const BusinessForm = () => {
         images_url: uploadedUrls.join(","), // Store as comma-separated string
         title: formData.title,
         description: formData.description,
-        type:formData.type,
+        type: formData.type,
         category: formData.subCategory || formData.category,
         price_per_hour: formData.rentPerHour || null,
         price_per_day: formData.rentPerDay || null,
         price_per_week: formData.rentPerWeek || null,
+        selling_price: formData.sellingPrice || null,
         security_deposit: formData.securityDeposit || null,
         minimum_rental_period: formData.minimumRentPeriod,
         availability_start: formData.availableFrom.toISOString(),
@@ -234,17 +255,17 @@ const BusinessForm = () => {
   };
 
   const onDateChange = (event, selectedDate) => {
-  if (Platform.OS === "android") {
-    setShowDatePicker({ field: null, show: false });
-  }
+    if (Platform.OS === "android") {
+      setShowDatePicker({ field: null, show: false });
+    }
 
-  if (selectedDate && showDatePicker.field) {
-    setFormData((prev) => ({
-      ...prev,
-      [showDatePicker.field]: selectedDate,
-    }));
-  }
-};
+    if (selectedDate && showDatePicker.field) {
+      setFormData((prev) => ({
+        ...prev,
+        [showDatePicker.field]: selectedDate,
+      }));
+    }
+  };
 
   const removeImage = (index) => {
     const newImages = [...images];
@@ -254,15 +275,23 @@ const BusinessForm = () => {
 
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
-      <Text  adjustsFontSizeToFit style={styles.stepTitle}><Icons name='image' size={20} color={'#fff'}/>Equipment Photos</Text>
-      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Upload up to 4 high-quality images (minimum 1 required)</Text>
+      <Text adjustsFontSizeToFit style={styles.stepTitle}>
+        <Icons name="image" size={20} color={"#fff"} />
+        Equipment Photos
+      </Text>
+      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+        Upload up to 4 high-quality images (minimum 1 required)
+      </Text>
 
       {/* Image Upload Grid */}
       <View style={styles.imageGrid}>
         {images.map((uri, index) => (
           <View key={index} style={styles.imageContainer}>
             <Image source={{ uri }} style={styles.uploadedImage} />
-            <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(index)}>
+            <TouchableOpacity
+              style={styles.removeImageBtn}
+              onPress={() => removeImage(index)}
+            >
               <Icons name="close-circle" size={24} color="#ff6b6b" />
             </TouchableOpacity>
           </View>
@@ -271,17 +300,25 @@ const BusinessForm = () => {
         {images.length < 4 && (
           <TouchableOpacity style={styles.addImageBtn} onPress={pickImages}>
             <Icons name="camera" size={25} color="#3897f0" />
-            <Text adjustsFontSizeToFit style={styles.addImageText}>Add Photo</Text>
-            <Text adjustsFontSizeToFit style={styles.imageCount}>{images.length}/4</Text>
+            <Text adjustsFontSizeToFit style={styles.addImageText}>
+              Add Photo
+            </Text>
+            <Text adjustsFontSizeToFit style={styles.imageCount}>
+              {images.length}/4
+            </Text>
           </TouchableOpacity>
         )}
       </View>
 
       {images.length === 0 && (
-        <Text adjustsFontSizeToFit style={styles.warningText}>Please upload at least 1 image</Text>
+        <Text adjustsFontSizeToFit style={styles.warningText}>
+          Please upload at least 1 image
+        </Text>
       )}
 
-      <Text adjustsFontSizeToFit style={styles.sectionTitle}>Basic Information</Text>
+      <Text adjustsFontSizeToFit style={styles.sectionTitle}>
+        Basic Information
+      </Text>
 
       {/* Title */}
       <View style={styles.inputGroup}>
@@ -289,7 +326,12 @@ const BusinessForm = () => {
           Listing Title <Text style={styles.requiredStar}>*</Text>
         </Text>
         <View style={styles.inputContainer}>
-          <Icons name="document-text-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="document-text-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="e.g., Canon 5D Mark IV Camera for Rent"
@@ -311,16 +353,19 @@ const BusinessForm = () => {
             placeholder="Describe your equipment in detail. Include condition, features, and any important notes..."
             placeholderTextColor="#878787"
             value={formData.description}
-            onChangeText={(text) => setFormData({ ...formData, description: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, description: text })
+            }
             multiline
             numberOfLines={5}
             textAlignVertical="top"
           />
         </View>
-        <Text adjustsFontSizeToFit style={styles.inputHint}>{formData.description.length}/500 characters</Text>
+        <Text adjustsFontSizeToFit style={styles.inputHint}>
+          {formData.description.length}/500 characters
+        </Text>
       </View>
 
-      
       {/* Type Selection */}
       <View style={styles.inputGroup}>
         <Text adjustsFontSizeToFit style={styles.inputLabel}>
@@ -328,16 +373,16 @@ const BusinessForm = () => {
         </Text>
         <View style={styles.pickerContainer}>
           <Picker
-  selectedValue={formData.type}
-  onValueChange={(value) => setFormData({ ...formData, type: value })}
-  style={styles.picker}
-  dropdownIconColor="#878787"
->
-  <Picker.Item label="Select type" value="" />
-  {categoriesType.map((type) => (
-    <Picker.Item key={type} label={type} value={type} />
-  ))}
-</Picker>
+            selectedValue={formData.type}
+            onValueChange={(value) => setFormData({ ...formData, type: value })}
+            style={styles.picker}
+            dropdownIconColor="#878787"
+          >
+            <Picker.Item label="Select type" value="" />
+            {categoriesType.map((type) => (
+              <Picker.Item key={type} label={type} value={type} />
+            ))}
+          </Picker>
         </View>
       </View>
 
@@ -349,7 +394,9 @@ const BusinessForm = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.category}
-            onValueChange={(value) => setFormData({ ...formData, category: value, subCategory: "" })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, category: value, subCategory: "" })
+            }
             style={styles.picker}
             dropdownIconColor="#878787"
           >
@@ -360,78 +407,81 @@ const BusinessForm = () => {
           </Picker>
         </View>
       </View>
-
-      {/* Sub Category */}
-      {formData.category && (
-        <View style={styles.inputGroup}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>
-            Sub Category <Text style={styles.requiredStar}>*</Text>
-          </Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.subCategory}
-              onValueChange={(value) => setFormData({ ...formData, subCategory: value })}
-              style={styles.picker}
-              dropdownIconColor="#878787"
-            >
-              <Picker.Item label="Select Sub Category" value="" />
-              {categories[formData.category]?.map((sub) => (
-                <Picker.Item key={sub} label={sub} value={sub} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-      )}
     </View>
   );
 
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
-      <Text adjustsFontSizeToFit style={styles.stepTitle}><Icons name='wallet' size={20} color={'#fff'}/> Pricing & Availability</Text>
-      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Set your rental prices and availability</Text>
+      <Text adjustsFontSizeToFit style={styles.stepTitle}>
+        <Icons name="wallet" size={20} color={"#fff"} /> Pricing & Availability
+      </Text>
+      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+        Set your rental prices and availability
+      </Text>
+      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+        (If you are selling here, please ignore this section)
+      </Text>
 
       {/* Pricing Options */}
       <View style={styles.pricingGrid}>
         <View style={styles.pricingCard}>
-          <Text adjustsFontSizeToFit style={styles.pricingLabel}>Per Hour</Text>
+          <Text adjustsFontSizeToFit style={styles.pricingLabel}>
+            Per Hour
+          </Text>
           <View style={styles.pricingInputContainer}>
-            <Text adjustsFontSizeToFit style={styles.currencySymbol}>₹</Text>
+            <Text adjustsFontSizeToFit style={styles.currencySymbol}>
+              ₹
+            </Text>
             <TextInput
               style={styles.pricingInput}
               placeholder="0"
               placeholderTextColor="#878787"
               value={formData.rentPerHour}
-              onChangeText={(text) => setFormData({ ...formData, rentPerHour: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, rentPerHour: text })
+              }
               keyboardType="numeric"
             />
           </View>
         </View>
 
         <View style={styles.pricingCard}>
-          <Text adjustsFontSizeToFit style={styles.pricingLabel}>Per Day</Text>
+          <Text adjustsFontSizeToFit style={styles.pricingLabel}>
+            Per Day
+          </Text>
           <View style={styles.pricingInputContainer}>
-            <Text adjustsFontSizeToFit style={styles.currencySymbol}>₹</Text>
+            <Text adjustsFontSizeToFit style={styles.currencySymbol}>
+              ₹
+            </Text>
             <TextInput
               style={styles.pricingInput}
               placeholder="0"
               placeholderTextColor="#878787"
               value={formData.rentPerDay}
-              onChangeText={(text) => setFormData({ ...formData, rentPerDay: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, rentPerDay: text })
+              }
               keyboardType="numeric"
             />
           </View>
         </View>
 
         <View style={styles.pricingCard}>
-          <Text adjustsFontSizeToFit style={styles.pricingLabel}>Per Week</Text>
+          <Text adjustsFontSizeToFit style={styles.pricingLabel}>
+            Per Week
+          </Text>
           <View style={styles.pricingInputContainer}>
-            <Text adjustsFontSizeToFit style={styles.currencySymbol}>₹</Text>
+            <Text adjustsFontSizeToFit style={styles.currencySymbol}>
+              ₹
+            </Text>
             <TextInput
               style={styles.pricingInput}
               placeholder="0"
               placeholderTextColor="#878787"
               value={formData.rentPerWeek}
-              onChangeText={(text) => setFormData({ ...formData, rentPerWeek: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, rentPerWeek: text })
+              }
               keyboardType="numeric"
             />
           </View>
@@ -440,28 +490,62 @@ const BusinessForm = () => {
 
       {/* Security Deposit */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Security Deposit</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Selling Price
+        </Text>
         <View style={styles.inputContainer}>
-          <Text adjustsFontSizeToFit style={styles.currencySymbol}>₹</Text>
+          <Text adjustsFontSizeToFit style={styles.currencySymbol}>
+            ₹
+          </Text>
+          <TextInput
+            style={[styles.input, { paddingLeft: 30 }]}
+            placeholder="Amount required as selling"
+            placeholderTextColor="#878787"
+            value={formData.sellingPrice}
+            onChangeText={(text) =>
+              setFormData({ ...formData, sellingPrice: text })
+            }
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      {/* Security Deposit */}
+      <View style={styles.inputGroup}>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Security Deposit
+        </Text>
+        <View style={styles.inputContainer}>
+          <Text adjustsFontSizeToFit style={styles.currencySymbol}>
+            ₹
+          </Text>
           <TextInput
             style={[styles.input, { paddingLeft: 30 }]}
             placeholder="Amount required as security deposit"
             placeholderTextColor="#878787"
             value={formData.securityDeposit}
-            onChangeText={(text) => setFormData({ ...formData, securityDeposit: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, securityDeposit: text })
+            }
             keyboardType="numeric"
           />
         </View>
-        <Text adjustsFontSizeToFit style={styles.inputHint}>Refundable deposit to cover damages</Text>
+        <Text adjustsFontSizeToFit style={styles.inputHint}>
+          Refundable deposit to cover damages
+        </Text>
       </View>
 
       {/* Minimum Rental Period */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Minimum Rental Period</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Minimum Rental Period
+        </Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.minimumRentPeriod}
-            onValueChange={(value) => setFormData({ ...formData, minimumRentPeriod: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, minimumRentPeriod: value })
+            }
             style={styles.picker}
             dropdownIconColor="#878787"
           >
@@ -476,15 +560,23 @@ const BusinessForm = () => {
       </View>
 
       {/* Availability Period */}
-      <Text adjustsFontSizeToFit style={styles.sectionTitle}>Availability Period</Text>
+      <Text adjustsFontSizeToFit style={styles.sectionTitle}>
+        Availability Period
+      </Text>
 
       <View style={styles.dateRangeContainer}>
         <TouchableOpacity
           style={styles.dateBox}
-          onPress={() => setShowDatePicker({ field: "availableFrom", show: true })}
+          onPress={() =>
+            setShowDatePicker({ field: "availableFrom", show: true })
+          }
         >
-          <Text adjustsFontSizeToFit style={styles.dateLabel}>From</Text>
-          <Text style={styles.dateValue}>{formData.availableFrom.toLocaleDateString()}</Text>
+          <Text adjustsFontSizeToFit style={styles.dateLabel}>
+            From
+          </Text>
+          <Text style={styles.dateValue}>
+            {formData.availableFrom.toLocaleDateString()}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.dateArrow}>
@@ -493,30 +585,40 @@ const BusinessForm = () => {
 
         <TouchableOpacity
           style={styles.dateBox}
-          onPress={() => setShowDatePicker({ field: "availableTo", show: true })}
+          onPress={() =>
+            setShowDatePicker({ field: "availableTo", show: true })
+          }
         >
-          <Text adjustsFontSizeToFit style={styles.dateLabel}>To</Text>
-          <Text adjustsFontSizeToFit style={styles.dateValue}>{formData.availableTo.toLocaleDateString()}</Text>
+          <Text adjustsFontSizeToFit style={styles.dateLabel}>
+            To
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.dateValue}>
+            {formData.availableTo.toLocaleDateString()}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {showDatePicker.show && (
-  <DateTimePicker
-    value={formData[showDatePicker.field] || new Date()}
-    mode="date"
-    display={Platform.OS === "ios" ? "spinner" : "default"}
-    onChange={onDateChange}
-    minimumDate={new Date()}
-  />
-)}
+        <DateTimePicker
+          value={formData[showDatePicker.field] || new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={onDateChange}
+          minimumDate={new Date()}
+        />
+      )}
 
       {/* Availability Status */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Availability Status</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Availability Status
+        </Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={formData.isAvailable}
-            onValueChange={(value) => setFormData({ ...formData, isAvailable: value })}
+            onValueChange={(value) =>
+              setFormData({ ...formData, isAvailable: value })
+            }
             style={styles.picker}
             dropdownIconColor="#878787"
           >
@@ -530,27 +632,42 @@ const BusinessForm = () => {
 
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
-      <Text adjustsFontSizeToFit style={styles.stepTitle}><Icons name='location' size={20} color={'#fff'}/> Location & Contact</Text>
-      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Where can renters find you?</Text>
+      <Text adjustsFontSizeToFit style={styles.stepTitle}>
+        <Icons name="location" size={20} color={"#fff"} /> Location & Contact
+      </Text>
+      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+        Where can renters find you?
+      </Text>
 
       {/* Location Name */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Location Name</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Location Name
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="location-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="location-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="e.g., Downtown Store, Home Address"
             placeholderTextColor="#878787"
             value={formData.locationName}
-            onChangeText={(text) => setFormData({ ...formData, locationName: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, locationName: text })
+            }
           />
         </View>
       </View>
 
       <View style={styles.rowInputs}>
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>City</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            City
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -563,7 +680,9 @@ const BusinessForm = () => {
         </View>
 
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>State</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            State
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -578,55 +697,81 @@ const BusinessForm = () => {
 
       <View style={styles.rowInputs}>
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>ZIP Code</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            ZIP Code
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="ZIP Code"
               placeholderTextColor="#878787"
               value={formData.zipCode}
-              onChangeText={(text) => setFormData({ ...formData, zipCode: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, zipCode: text })
+              }
               keyboardType="numeric"
             />
           </View>
         </View>
 
         <View style={[styles.inputGroup, { flex: 2 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>Full Address</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            Full Address
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="Street address"
               placeholderTextColor="#878787"
               value={formData.fullAddress}
-              onChangeText={(text) => setFormData({ ...formData, fullAddress: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, fullAddress: text })
+              }
             />
           </View>
         </View>
       </View>
 
       {/* Contact Info */}
-      <Text adjustsFontSizeToFit style={styles.sectionTitle}>Contact Information</Text>
+      <Text adjustsFontSizeToFit style={styles.sectionTitle}>
+        Contact Information
+      </Text>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Phone Number</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Phone Number
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="call-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="call-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Contact phone number"
             placeholderTextColor="#878787"
             value={formData.phoneNumber}
-            onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, phoneNumber: text })
+            }
             keyboardType="phone-pad"
           />
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Email Address</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Email Address
+        </Text>
         <View style={styles.inputContainer}>
-          <Icons name="mail-outline" size={20} color="#878787" style={styles.inputIcon} />
+          <Icons
+            name="mail-outline"
+            size={20}
+            color="#878787"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Contact email"
@@ -643,13 +788,20 @@ const BusinessForm = () => {
 
   const renderStep4 = () => (
     <View style={styles.stepContainer}>
-      <Text adjustsFontSizeToFit style={styles.stepTitle}><Icons name='document-text' size={20} color={'#fff'}/> Equipment Details</Text>
-      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>Provide detailed information about your equipment</Text>
+      <Text adjustsFontSizeToFit style={styles.stepTitle}>
+        <Icons name="document-text" size={20} color={"#fff"} /> Equipment
+        Details
+      </Text>
+      <Text adjustsFontSizeToFit style={styles.stepSubtitle}>
+        Provide detailed information about your equipment
+      </Text>
 
       {/* Brand & Model */}
       <View style={styles.rowInputs}>
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>Brand</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            Brand
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -662,7 +814,9 @@ const BusinessForm = () => {
         </View>
 
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>Model</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            Model
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -678,7 +832,9 @@ const BusinessForm = () => {
       {/* Year & Serial Number */}
       <View style={styles.rowInputs}>
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>Year</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            Year
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -692,14 +848,18 @@ const BusinessForm = () => {
         </View>
 
         <View style={[styles.inputGroup, { flex: 1 }]}>
-          <Text adjustsFontSizeToFit style={styles.inputLabel}>Serial Number</Text>
+          <Text adjustsFontSizeToFit style={styles.inputLabel}>
+            Serial Number
+          </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="Optional"
               placeholderTextColor="#878787"
               value={formData.serialNumber}
-              onChangeText={(text) => setFormData({ ...formData, serialNumber: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, serialNumber: text })
+              }
             />
           </View>
         </View>
@@ -707,22 +867,26 @@ const BusinessForm = () => {
 
       {/* Condition */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Condition</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Condition
+        </Text>
         <View style={styles.conditionContainer}>
           {conditions.map((condition) => (
             <TouchableOpacity
               key={condition}
               style={[
                 styles.conditionChip,
-                formData.condition === condition && styles.conditionChipSelected,
+                formData.condition === condition &&
+                  styles.conditionChipSelected,
               ]}
               onPress={() => setFormData({ ...formData, condition })}
             >
               <Text
-              adjustsFontSizeToFit
+                adjustsFontSizeToFit
                 style={[
                   styles.conditionChipText,
-                  formData.condition === condition && styles.conditionChipTextSelected,
+                  formData.condition === condition &&
+                    styles.conditionChipTextSelected,
                 ]}
               >
                 {condition}
@@ -734,14 +898,18 @@ const BusinessForm = () => {
 
       {/* Condition Notes */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Condition Notes</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Condition Notes
+        </Text>
         <View style={[styles.inputContainer, styles.textAreaContainer]}>
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Any scratches, wear and tear, or issues? Be honest..."
             placeholderTextColor="#878787"
             value={formData.conditionNote}
-            onChangeText={(text) => setFormData({ ...formData, conditionNote: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, conditionNote: text })
+            }
             multiline
             numberOfLines={3}
           />
@@ -750,14 +918,18 @@ const BusinessForm = () => {
 
       {/* Special Instructions */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Special Instructions</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Special Instructions
+        </Text>
         <View style={[styles.inputContainer, styles.textAreaContainer]}>
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Any special handling instructions, usage tips, etc."
             placeholderTextColor="#878787"
             value={formData.specialInstruction}
-            onChangeText={(text) => setFormData({ ...formData, specialInstruction: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, specialInstruction: text })
+            }
             multiline
             numberOfLines={3}
           />
@@ -766,14 +938,18 @@ const BusinessForm = () => {
 
       {/* Terms & Conditions */}
       <View style={styles.inputGroup}>
-        <Text adjustsFontSizeToFit style={styles.inputLabel}>Terms & Conditions</Text>
+        <Text adjustsFontSizeToFit style={styles.inputLabel}>
+          Terms & Conditions
+        </Text>
         <View style={[styles.inputContainer, styles.textAreaContainer]}>
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Any specific terms for renters..."
             placeholderTextColor="#878787"
             value={formData.termsCondition}
-            onChangeText={(text) => setFormData({ ...formData, termsCondition: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, termsCondition: text })
+            }
             multiline
             numberOfLines={3}
           />
@@ -782,132 +958,218 @@ const BusinessForm = () => {
 
       {/* Preview Card */}
       <View style={styles.previewCard}>
-        <Text adjustsFontSizeToFit style={styles.previewTitle}>Listing Preview</Text>
+        <Text adjustsFontSizeToFit style={styles.previewTitle}>
+          Listing Preview
+        </Text>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Title:</Text>
-          <Text adjustsFontSizeToFit style={styles.previewValue}>{formData.title || "Not set"}</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Title:
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.previewValue}>
+            {formData.title || "Not set"}
+          </Text>
         </View>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Category:</Text>
-          <Text adjustsFontSizeToFit style={styles.previewValue}>{formData.subCategory || formData.category || "Not set"}</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Category:
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.previewValue}>
+            {formData.subCategory || formData.category || "Not set"}
+          </Text>
         </View>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Price:</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Price:
+          </Text>
           <Text adjustsFontSizeToFit style={styles.previewValue}>
             {formData.rentPerDay ? `₹${formData.rentPerDay}/day` : "Not set"}
           </Text>
         </View>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Location:</Text>
-          <Text adjustsFontSizeToFit style={styles.previewValue}>{formData.city || "Not set"}</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Location:
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.previewValue}>
+            {formData.city || "Not set"}
+          </Text>
         </View>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Condition:</Text>
-          <Text adjustsFontSizeToFit style={styles.previewValue}>{formData.condition || "Not set"}</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Condition:
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.previewValue}>
+            {formData.condition || "Not set"}
+          </Text>
         </View>
         <View style={styles.previewItem}>
-          <Text adjustsFontSizeToFit style={styles.previewLabel}>Images:</Text>
-          <Text adjustsFontSizeToFit style={styles.previewValue}>{images.length}/4 uploaded</Text>
+          <Text adjustsFontSizeToFit style={styles.previewLabel}>
+            Images:
+          </Text>
+          <Text adjustsFontSizeToFit style={styles.previewValue}>
+            {images.length}/4 uploaded
+          </Text>
         </View>
       </View>
     </View>
   );
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Icons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text adjustsFontSizeToFit style={styles.headerTitle}>List Equipment</Text>
-          <TouchableOpacity style={styles.helpBtn}>
-            <Icons name="help-circle-outline" size={24} color="#878787" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          {[1, 2, 3, 4].map((step) => (
-            <React.Fragment key={step}>
-              <TouchableOpacity
-                style={[
-                  styles.progressStep,
-                  step <= currentStep && styles.progressStepActive,
-                  step < currentStep && styles.progressStepCompleted,
-                ]}
-                onPress={() => setCurrentStep(step)}
-              >
-                {step < currentStep ? (
-                  <Icons name="checkmark" size={16} color="#fff" />
-                ) : (
-                  <Text adjustsFontSizeToFit style={[styles.progressStepText, step <= currentStep && styles.progressStepTextActive]}>
-                    {step}
-                  </Text>
-                )}
-              </TouchableOpacity>
-              {step < 4 && (
-                <View style={[styles.progressLine, step < currentStep && styles.progressLineActive]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-
-        {/* Step Labels */}
-        <View style={styles.stepLabels}>
-          <Text adjustsFontSizeToFit style={[styles.stepLabel, currentStep >= 1 && styles.stepLabelActive]}>Photos</Text>
-          <Text adjustsFontSizeToFit style={[styles.stepLabel, currentStep >= 2 && styles.stepLabelActive]}>Pricing</Text>
-          <Text adjustsFontSizeToFit style={[styles.stepLabel, currentStep >= 3 && styles.stepLabelActive]}>Location</Text>
-          <Text adjustsFontSizeToFit style={[styles.stepLabel, currentStep >= 4 && styles.stepLabelActive]}>Details</Text>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Current Step Content */}
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
-
-          {/* Navigation Buttons */}
-          <View style={styles.navigationButtons}>
-            {currentStep > 1 && (
-              <TouchableOpacity
-                style={[styles.navBtn, styles.prevBtn]}
-                onPress={() => setCurrentStep(currentStep - 1)}
-              >
-                <Icons name="arrow-back" size={20} color="#3897f0" />
-                <Text adjustsFontSizeToFit style={styles.prevBtnText}>Previous</Text>
-              </TouchableOpacity>
-            )}
-
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
             <TouchableOpacity
-              style={[
-                styles.navBtn,
-                styles.nextBtn,
-                currentStep === 1 && images.length === 0 && styles.nextBtnDisabled,
-              ]}
-              onPress={() => {
-                if (currentStep < 4) {
-                  setCurrentStep(currentStep + 1);
-                } else {
-                  saveListing();
-                }
-              }}
-              disabled={uploading || (currentStep === 1 && images.length === 0)}
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
             >
-              {uploading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <View style={styles.nextBtnContent}>
-                  <Text adjustsFontSizeToFit style={styles.nextBtnText}>{currentStep === 4 ? "List" : "Continue"}</Text>
-                  <Icons name="arrow-forward" size={20} color="#fff" />
-                </View>
-              )}
+              <Icons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text adjustsFontSizeToFit style={styles.headerTitle}>
+              List Equipment
+            </Text>
+            <TouchableOpacity>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            {[1, 2, 3, 4].map((step) => (
+              <React.Fragment key={step}>
+                <TouchableOpacity
+                  style={[
+                    styles.progressStep,
+                    step <= currentStep && styles.progressStepActive,
+                    step < currentStep && styles.progressStepCompleted,
+                  ]}
+                  onPress={() => setCurrentStep(step)}
+                >
+                  {step < currentStep ? (
+                    <Icons name="checkmark" size={16} color="#fff" />
+                  ) : (
+                    <Text
+                      adjustsFontSizeToFit
+                      style={[
+                        styles.progressStepText,
+                        step <= currentStep && styles.progressStepTextActive,
+                      ]}
+                    >
+                      {step}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                {step < 4 && (
+                  <View
+                    style={[
+                      styles.progressLine,
+                      step < currentStep && styles.progressLineActive,
+                    ]}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* Step Labels */}
+          <View style={styles.stepLabels}>
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.stepLabel,
+                currentStep >= 1 && styles.stepLabelActive,
+              ]}
+            >
+              Photos
+            </Text>
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.stepLabel,
+                currentStep >= 2 && styles.stepLabelActive,
+              ]}
+            >
+              Pricing
+            </Text>
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.stepLabel,
+                currentStep >= 3 && styles.stepLabelActive,
+              ]}
+            >
+              Location
+            </Text>
+            <Text
+              adjustsFontSizeToFit
+              style={[
+                styles.stepLabel,
+                currentStep >= 4 && styles.stepLabelActive,
+              ]}
+            >
+              Details
+            </Text>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Current Step Content */}
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            {currentStep === 4 && renderStep4()}
+
+            {/* Navigation Buttons */}
+            <View style={styles.navigationButtons}>
+              {currentStep > 1 && (
+                <TouchableOpacity
+                  style={[styles.navBtn, styles.prevBtn]}
+                  onPress={() => setCurrentStep(currentStep - 1)}
+                >
+                  <Icons name="arrow-back" size={20} color="#3897f0" />
+                  <Text adjustsFontSizeToFit style={styles.prevBtnText}>
+                    Previous
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.navBtn,
+                  styles.nextBtn,
+                  currentStep === 1 &&
+                    images.length === 0 &&
+                    styles.nextBtnDisabled,
+                ]}
+                onPress={() => {
+                  if (currentStep < 4) {
+                    setCurrentStep(currentStep + 1);
+                  } else {
+                    saveListing();
+                  }
+                }}
+                disabled={
+                  uploading || (currentStep === 1 && images.length === 0)
+                }
+              >
+                {uploading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <View style={styles.nextBtnContent}>
+                    <Text adjustsFontSizeToFit style={styles.nextBtnText}>
+                      {currentStep === 4 ? "List" : "Continue"}
+                    </Text>
+                    <Icons name="arrow-forward" size={20} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -1120,7 +1382,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 12,
   },
-  
 
   textAreaContainer: {
     alignItems: "flex-start",

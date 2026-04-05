@@ -23,8 +23,7 @@ const isSmallDevice = width < 375;
 
 const OtherUserProfileScreen = (props) => {
   const { navigation, route } = props;
- const user_id =
-    props?.user_id || route?.params?.user_id;
+  const user_id = props?.user_id || route?.params?.user_id;
 
   const [currentUser, setCurrentUser] = useState(null);
   const [user, setUser] = useState(null);
@@ -81,10 +80,10 @@ const OtherUserProfileScreen = (props) => {
   };
 
   const onRefresh = async () => {
-  setRefreshing(true);
-  await fetchProfile();
-  setRefreshing(false);
-};
+    setRefreshing(true);
+    await fetchProfile();
+    setRefreshing(false);
+  };
 
   // 🔥 FETCH PROFILE
   const fetchProfile = async () => {
@@ -104,33 +103,35 @@ const OtherUserProfileScreen = (props) => {
 
     // POSTS
     // ✅ FIXED POSTS FETCH
-const { data: postData } = await supabase
-  .from("posts")
-  .select(`
+    const { data: postData } = await supabase
+      .from("posts")
+      .select(
+        `
     *,
     post_likes!left(user_id),
     comments(count)
-  `)
-  .eq("user_id", user_id)
-  .order("created_at", { ascending: false });
+  `,
+      )
+      .eq("user_id", user_id)
+      .order("created_at", { ascending: false });
 
-if (!postData) {
-  setPosts([]);
-  return;
-}
+    if (!postData) {
+      setPosts([]);
+      return;
+    }
 
-const formattedPosts = postData.map(post => {
-  const likes = post.post_likes || [];
+    const formattedPosts = postData.map((post) => {
+      const likes = post.post_likes || [];
 
-  return {
-    ...post,
-    likes_count: likes.length,
-    comments_count: post.comments?.[0]?.count || 0,
-    user_has_liked: likes.some(like => like.user_id === current.id)
-  };
-});
+      return {
+        ...post,
+        likes_count: likes.length,
+        comments_count: post.comments?.[0]?.count || 0,
+        user_has_liked: likes.some((like) => like.user_id === current.id),
+      };
+    });
 
-setPosts(formattedPosts);
+    setPosts(formattedPosts);
     // FOLLOWERS COUNT
     const { count: followersCount } = await supabase
       .from("user_follows")
@@ -160,11 +161,11 @@ setPosts(formattedPosts);
     setLoading(false);
   };
 
-useEffect(() => {
-  if (!user_id) return;
+  useEffect(() => {
+    if (!user_id) return;
 
-  fetchProfile();
-}, [user_id]);
+    fetchProfile();
+  }, [user_id]);
 
   // Add this function in your OtherUserProfileScreen component (before the return statement)
   const handlePostDelete = (deletedPostId) => {
@@ -174,7 +175,7 @@ useEffect(() => {
     );
 
     // Optional: Show a success message
-    Alert.alert("Success", "Post deleted successfully");
+    //Alert.alert("Success", "Post deleted successfully");
   };
 
   // 🔥 FOLLOW / UNFOLLOW
@@ -255,23 +256,26 @@ useEffect(() => {
       </View>
 
       <ScrollView
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={styles.scrollContent}
-  refreshControl={
-    <RefreshControl
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      colors={["#3897f0"]}
-      tintColor="#3897f0"
-    />
-  }
->
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3897f0"]}
+            tintColor="#3897f0"
+          />
+        }
+      >
         {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
             <Image
               style={styles.avatar}
-              source={{ uri: user?.profile_image_url || "https://iili.io/BoNMnj4.md.png" }}
+              source={{
+                uri:
+                  user?.profile_image_url || "https://iili.io/BoNMnj4.md.png",
+              }}
               resizeMode="cover"
             />
             <View style={styles.verifiedBadge}>
@@ -533,7 +537,7 @@ useEffect(() => {
           <TouchableOpacity
             style={styles.messageBtn}
             onPress={() => {
-              navigation.navigate("chat", {
+              navigation.navigate("Chat", {
                 currentUserId: currentuserid,
                 otherUserId: user_id,
               });
@@ -603,6 +607,7 @@ useEffect(() => {
                     ),
                   );
                 }}
+                onPostDelete={handlePostDelete}
               />
             ))
           )}
