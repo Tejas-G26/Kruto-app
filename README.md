@@ -101,7 +101,8 @@ npx expo start -c
 
 ## Supabase Tables schemas
 
-## user table
+```sql
+# user table
 
 ```sql
 CREATE TABLE users (
