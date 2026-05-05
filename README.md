@@ -180,7 +180,7 @@ created_at TIMESTAMP,
 
 # Post likes table
 
-```sql
+
 CREATE TABLE post_likes (
 like_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 post_id TEXT,
@@ -190,7 +190,7 @@ created_at TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(post_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 
-);```
+);
 
 # Comment table
 
