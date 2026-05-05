@@ -104,7 +104,6 @@ npx expo start -c
 ```sql
 # user table
 
-```sql
 CREATE TABLE users (
 user_id TEXT PRIMARY KEY,
 username TEXT,
@@ -123,11 +122,11 @@ is_online boolean,
 last_seen TIMESTAMP,
 created_at TIMESTAMP
 
-); ```
+); 
 
 # Bussiness listing table
 
-```sql
+
 CREATE TABLE business_listings (
 business_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 created_user_id TEXT,
@@ -162,11 +161,11 @@ created_at TIMESTAMP,
 
     FOREIGN KEY (created_user_id) REFERENCES users(user_id)
 
-);```
+);
 
 # Post table
 
-```sql
+
 CREATE TABLE posts (
 post_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 user_id TEXT,
@@ -177,7 +176,7 @@ created_at TIMESTAMP,
 
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 
-);```
+);
 
 # Post likes table
 
@@ -195,7 +194,7 @@ created_at TIMESTAMP,
 
 # Comment table
 
-```sql
+
 CREATE TABLE comments (
 comment_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 post_id TEXT,
@@ -206,11 +205,11 @@ created_at TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(post_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 
-);```
+);
 
 # comment likes table
 
-```sql
+
 CREATE TABLE comment_likes (
 like_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 comment_id TEXT,
@@ -220,11 +219,11 @@ created_at TIMESTAMP,
     FOREIGN KEY (comment_id) REFERENCES comments(comment_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 
-);```
+);
 
 # follow table
 
-```sql
+
 CREATE TABLE user_follows (
 follow_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 follower_id TEXT,
@@ -234,11 +233,11 @@ created_at TIMESTAMP,
     FOREIGN KEY (follower_id) REFERENCES users(user_id),
     FOREIGN KEY (following_id) REFERENCES users(user_id)
 
-);```
+);
 
 # save post table
 
-```sql
+
 CREATE TABLE saved_posts (
 save_id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
 user_id TEXT,
@@ -248,11 +247,10 @@ created_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (post_id) REFERENCES posts(post_id)
 
-);```
+);
 
 # Conversations table
 
-```sql
 create table public.conversations (
 conversation_id uuid not null default gen_random_uuid (),
 user1_id text null,
@@ -262,11 +260,11 @@ constraint conversations_pkey primary key (conversation_id),
 constraint conversations_user1_id_user2_id_key unique (user1_id, user2_id),
 constraint conversations_user1_id_fkey foreign KEY (user1_id) references users (user_id) on delete CASCADE,
 constraint conversations_user2_id_fkey foreign KEY (user2_id) references users (user_id) on delete CASCADE
-) TABLESPACE pg_default;```
+) TABLESPACE pg_default;
 
 # message table
 
-```sql
+
 create table public.messages (
 message_id uuid not null default gen_random_uuid (),
 conversation_id uuid null,
@@ -278,4 +276,6 @@ constraint messages_pkey primary key (message_id),
 constraint messages_conversation_id_fkey foreign KEY (conversation_id) references conversations (conversation_id) on delete CASCADE,
 constraint messages_receiver_id_fkey foreign KEY (receiver_id) references users (user_id) on delete CASCADE,
 constraint messages_sender_id_fkey foreign KEY (sender_id) references users (user_id) on delete CASCADE
-) TABLESPACE pg_default;```
+) TABLESPACE pg_default;
+
+```
