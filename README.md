@@ -42,16 +42,6 @@ Kruto bridges this gap by combining community interaction + business marketplace
 * Backend Depoly: Render 
 
 
-##  Installation
-
-```bash
-npm install
-```
-
-```bash
-npx expo start -c
-```
-
 ## 📱 Application Features
 
 * User authentication
@@ -97,9 +87,21 @@ Tejas
 📧 Email : tejasg.tech@gmail.com
 🔗 X : https://x.com/TejasG26
 
+
+##  Installation
+
+```bash
+npm install
+```
+
+```bash
+npx expo start -c
+```
+
+
 ## Supabase Tables schemas
 
-# user table
+## user table
 
 ```sql
 CREATE TABLE users (
